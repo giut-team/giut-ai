@@ -1,0 +1,9 @@
+.venv/
+.vscode/
+.agents/
+
+*.pyc
+
+.env
+
+*.backup
