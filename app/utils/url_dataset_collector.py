@@ -6,50 +6,66 @@ from app.utils.url_list import TRAIN_URLS, TEST_URLS
 if __name__ == "__main__":
     htmlParser = HtmlParser()
 
-    with open("urls/train.json", "w", encoding="utf-8") as f:
+    train_labels = []
+    test_labels = []
+
+    with open("urls/train/train_blocks.json", "w", encoding="utf-8") as f:
         text = []
         images = []
         links = []
+
+        text_labels = []
+        image_labels = []
+        link_labels = []
 
         for label, urls in TRAIN_URLS.items():
             for url in urls:
                 try:
                     parsed = htmlParser.parse_url(url)
+
                     for t in parsed.text:
-                        text.append(
+                        id = f"T{len(text)+1:06d}"
+                        text.append({"id": id, **t})
+                        text_labels.append(
                             {
-                                **t,
+                                "id": id,
                                 "is_relevant": (
                                     "RELEVANT"
                                     if label == "COMPETITION"
-                                    and t["rel_pos"] >= 0.1
-                                    and t["rel_pos"] < 0.8
+                                    and t["features"]["rel_pos"] >= 0.1
+                                    and t["features"]["rel_pos"] < 0.8
                                     else "IRRELEVANT"
                                 ),
                             }
                         )
+
                     for i in parsed.images:
-                        images.append(
+                        id = f"I{len(images)+1:06d}"
+                        images.append({"id": id, **t})
+                        image_labels.append(
                             {
-                                **i,
+                                "id": id,
                                 "is_relevant": (
                                     "RELEVANT"
                                     if label == "COMPETITION"
-                                    and t["rel_pos"] >= 0.1
-                                    and t["rel_pos"] < 0.8
+                                    and i["features"]["rel_pos"] >= 0.1
+                                    and i["features"]["rel_pos"] < 0.8
                                     else "IRRELEVANT"
                                 ),
                             }
                         )
+
                     for l in parsed.links:
-                        links.append(
+                        id = f"L{len(links)+1:06d}"
+                        links.append({"id": id, **t})
+                        link_labels.append(
                             {
-                                **l,
+                                "id": id,
                                 "is_relevant": (
                                     "RELEVANT"
                                     if label == "COMPETITION"
-                                    and t["rel_pos"] >= 0.1
-                                    and t["rel_pos"] < 0.8
+                                    and l["features"]["rel_pos"] >= 0.1
+                                    and l["features"]["rel_pos"] < 0.8
                                     else "IRRELEVANT"
                                 ),
                             }
@@ -58,56 +74,75 @@ if __name__ == "__main__":
                 except Exception as e:
                     print(f"[skip] {url} -> {type(e).__name__}: {e}")
 
+                print(f"[ok] {url}")
+
         f.write(
             json.dumps(
                 {"text": text, "images": images, "links": links}, ensure_ascii=False
             )
         )
 
-    with open("urls/test.json", "w", encoding="utf-8") as f:
+        train_labels = text_labels + image_labels + link_labels
+
+    with open("urls/train/train_labels.json", "w") as f:
+        f.write(json.dumps(train_labels, ensure_ascii=False))
+
+    with open("urls/test/test_blocks.json", "w", encoding="utf-8") as f:
         text = []
         images = []
         links = []
+
+        text_labels = []
+        image_labels = []
+        link_labels = []
 
         for label, urls in TEST_URLS.items():
             for url in urls:
                 try:
                     parsed = htmlParser.parse_url(url)
                     for t in parsed.text:
-                        text.append(
+                        id = f"T{len(text)+1:06d}"
+                        text.append({"id": id, **t})
+                        text_labels.append(
                             {
-                                **t,
+                                "id": id,
                                 "is_relevant": (
                                     "RELEVANT"
                                     if label == "COMPETITION"
-                                    and t["rel_pos"] >= 0.1
-                                    and t["rel_pos"] < 0.8
+                                    and t["features"]["rel_pos"] >= 0.1
+                                    and t["features"]["rel_pos"] < 0.8
                                     else "IRRELEVANT"
                                 ),
                             }
                         )
+
                     for i in parsed.images:
-                        images.append(
+                        id = f"I{len(images)+1:06d}"
+                        images.append({"id": id, **t})
+                        image_labels.append(
                             {
-                                **i,
+                                "id": id,
                                 "is_relevant": (
                                     "RELEVANT"
                                     if label == "COMPETITION"
-                                    and t["rel_pos"] >= 0.1
-                                    and t["rel_pos"] < 0.8
+                                    and i["features"]["rel_pos"] >= 0.1
+                                    and i["features"]["rel_pos"] < 0.8
                                     else "IRRELEVANT"
                                 ),
                             }
                         )
+
                     for l in parsed.links:
-                        links.append(
+                        id = f"L{len(links)+1:06d}"
+                        links.append({"id": id, **t})
+                        link_labels.append(
                             {
-                                **l,
+                                "id": id,
                                 "is_relevant": (
                                     "RELEVANT"
                                     if label == "COMPETITION"
-                                    and t["rel_pos"] >= 0.1
-                                    and t["rel_pos"] < 0.8
+                                    and l["features"]["rel_pos"] >= 0.1
+                                    and l["features"]["rel_pos"] < 0.8
                                     else "IRRELEVANT"
                                 ),
                             }
@@ -116,8 +151,15 @@ if __name__ == "__main__":
                 except Exception as e:
                     print(f"[skip] {url} -> {type(e).__name__}: {e}")
 
+                print(f"[ok] {url}")
+
         f.write(
             json.dumps(
                 {"text": text, "images": images, "links": links}, ensure_ascii=False
             )
         )
+
+        test_labels = text_labels + image_labels + link_labels
+
+    with open("urls/test/test_labels.json", "w") as f:
+        f.write(json.dumps(test_labels, ensure_ascii=False))

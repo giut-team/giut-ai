@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import ipaddress
 import re
+import socket
 from dataclasses import dataclass, field
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlparse
 
 import requests
 import urllib3
@@ -94,6 +96,16 @@ NON_NAVIGABLE_SCHEMES = ("javascript:", "mailto:", "tel:")
 
 DEFAULT_USER_AGENT = "Mozilla/5.0 (compatible; HtmlParserBot/1.0)"
 
+# 사용자가 임의 URL 입력 -> http(s) 외 스킴은 차단
+ALLOWED_SCHEMES = ("http", "https")
+
+# 리다이렉트를 따라가며 매 홉마다 SSRF 검증을 다시 하되, 무한 루프 방지용 상한
+MAX_REDIRECTS = 5
+
+
+class UnsafeURLError(ValueError):
+    """내부망/사설 IP 등 안전하지 않은 주소로 판단되어 요청을 차단했을 때 발생"""
+
 
 @dataclass
 class ParsedPage:
@@ -111,19 +123,85 @@ class HtmlParser:
         self.timeout = timeout
         self.session = requests.Session()
         self.session.headers.update({"User-Agent": user_agent})
+        # 렌더링 fetch용 브라우저는 첫 render 호출 때 한 번만 띄우고 재사용
+        self._playwright = None
+        self._browser = None
 
-    def fetch(self, url: str) -> bytes:
+    def close(self) -> None:
+        # 렌더링용 브라우저를 띄운 적이 있다면 정리. 앱 또는 with block 종료 시 호출
+        if self._browser is not None:
+            self._browser.close()
+            self._browser = None
+        if self._playwright is not None:
+            self._playwright.stop()
+            self._playwright = None
+
+    def __enter__(self) -> "HtmlParser":
+        return self
+
+    def __exit__(self, *exc_info) -> None:
+        self.close()
+
+    def fetch(self, url: str, render: bool | str = True) -> bytes:
         # url 요청 -> HTML 원문(bytes)을 반환
         # parse()의 BeautifulSoup에서 디코딩 (<meta charset> / BOM / 헤더 종합 판단)
-        try:
-            response = self.session.get(url, timeout=self.timeout)
-        except requests.exceptions.SSLError:
-            # 인증서 검증 실패 시 검증 없이 재시도
-            urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-            response = self.session.get(url, timeout=self.timeout, verify=False)
 
-        response.raise_for_status()
-        return response.content
+        if render is True:
+            return self._fetch_rendered(url)
+        if render is False:
+            return self._fetch_static(url)
+
+        content = self._fetch_static(url)
+        if self._looks_like_csr_shell(content):
+            return self._fetch_rendered(url)
+        return content
+
+    def _fetch_static(self, url: str) -> bytes:
+        # 리다이렉트를 자동으로 따라가면 (allow_redirects=True)
+        # 검증된 URL이 내부망으로 리다이렉트되는 SSRF 우회를 놓칠 수 있어 매 홉마다 직접 검증
+        for _ in range(MAX_REDIRECTS + 1):
+            self._validate_url(url)
+            try:
+                response = self.session.get(
+                    url, timeout=self.timeout, allow_redirects=False
+                )
+            except requests.exceptions.SSLError:
+                # 인증서 검증 실패 시 검증 없이 재시도
+                urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+                response = self.session.get(
+                    url, timeout=self.timeout, allow_redirects=False, verify=False
+                )
+
+            if response.is_redirect or response.is_permanent_redirect:
+                location = response.headers.get("Location")
+                if not location:
+                    break
+                url = urljoin(url, location)
+                continue
+
+            response.raise_for_status()
+            return response.content
+
+        raise UnsafeURLError(f"too many redirects while fetching {url!r}")
+
+    def _fetch_rendered(self, url: str) -> bytes:
+        # Playwright로 페이지를 열어 JS 실행이 끝난 뒤(networkidle) DOM을 그대로 가져온다.
+        self._validate_url(url)
+        browser = self._ensure_browser()  # 브라우저가 열려 있으면 재사용
+
+        page = browser.new_page(
+            user_agent=DEFAULT_USER_AGENT,
+            ignore_https_errors=True,
+        )
+        try:
+            # 페이지 스스로도 자기 JS로 임의 주소에 요청을 보낼 수 있으므로 모든 하위 요청 검증
+            page.route("**/*", self._guard_route)
+            page.goto(url, timeout=self.timeout * 1000, wait_until="networkidle")
+            html = page.content()
+        finally:
+            page.close()
+
+        return html.encode("utf-8")
 
     def parse(self, content: str | bytes, base_url: str = "") -> ParsedPage:
         # HTML -> 노이즈 제거 -> 남은 본문만 블록 단위로 분리 -> feature dict 생성
@@ -147,7 +225,7 @@ class HtmlParser:
         image_blocks: list[dict] = []
         link_blocks: list[dict] = []
 
-        # 2) 각 블록을 feature dict 로 만든 뒤 img / a / 그 외(텍스트) 리스트로 분리
+        # 각 블록을 feature dict 로 만든 뒤 img / a / 그 외(텍스트) 리스트로 분리
         for index, tag in enumerate(units):
             feat = self._block_features(tag, index, total)
 
@@ -170,12 +248,67 @@ class HtmlParser:
 
         return ParsedPage(text=text_blocks, images=image_blocks, links=link_blocks)
 
-    def parse_url(self, url: str) -> ParsedPage:
+    def parse_url(self, url: str, render: bool | str = "auto") -> ParsedPage:
         # fetch -> parse 바로 실행하는 헬퍼
-        content = self.fetch(url)
+        content = self.fetch(url, render=render)
         return self.parse(content, base_url=url)
 
-    # -- internals -------------------------------------------------
+    # -- 내부 동작 (fetch) -------------------------------------------------
+
+    def _validate_url(self, url: str) -> None:
+        # SSRF 방지: http(s)만 허용하고, 호스트가 가리키는 IP가 전부 공인 IP인 경우만 통과.
+        # (localhost, 사설 IP 대역, 169.254.169.254 같은 클라우드 메타데이터 주소 등을 차단)
+        parsed = urlparse(url)
+        if parsed.scheme not in ALLOWED_SCHEMES:
+            raise UnsafeURLError(f"disallowed scheme: {parsed.scheme!r}")
+
+        hostname = parsed.hostname
+        if not hostname:
+            raise UnsafeURLError(f"missing hostname in url: {url!r}")
+
+        try:
+            infos = socket.getaddrinfo(hostname, None)
+        except socket.gaierror as e:
+            raise UnsafeURLError(f"cannot resolve host: {hostname!r}") from e
+
+        for info in infos:
+            ip = ipaddress.ip_address(info[4][0])
+            if not ip.is_global:
+                raise UnsafeURLError(
+                    f"blocked non-public address: {ip} (host={hostname!r})"
+                )
+
+    def _guard_route(self, route) -> None:
+        try:
+            self._validate_url(route.request.url)
+        except UnsafeURLError:
+            route.abort()
+            return
+        route.continue_()
+
+    def _ensure_browser(self):
+        if self._browser is None:
+            from playwright.sync_api import sync_playwright
+
+            self._playwright = sync_playwright().start()
+            self._browser = self._playwright.chromium.launch()
+
+        return self._browser
+
+    def _looks_like_csr_shell(self, content: bytes) -> bool:
+        # 정적 fetch 결과에서 script/style/noscript 제외 body 텍스트가 threshold 미만이면
+        # CSR(root div 안의 콘텐츠는 JS 실행으로 채우는 형태)로 판단, 렌더링 fetch로 재시도
+
+        CSR_SHELL_TEXT_THRESHOLD = 200
+
+        soup = BeautifulSoup(content, features="html.parser")
+        body = soup.body or soup
+        for tag in body.find_all(("script", "style", "noscript")):
+            tag.decompose()
+        text = body.get_text(strip=True)
+        return len(text) < CSR_SHELL_TEXT_THRESHOLD
+
+    # -- 내부 동작 (parse) -------------------------------------------------
 
     def _tokenize(self, *values: str) -> set[str]:
         text = " ".join(values).lower()
@@ -243,12 +376,14 @@ class HtmlParser:
         return {
             "text": block_text[:256],
             "tag": tag.name,
-            "depth": len(list(tag.parents)),
-            "text_len": len(block_text),
-            "link_density": link_char_count / max(len(block_text), 1),
-            "n_links": len(links_in),
-            "rel_pos": block_index / max(total_blocks, 1),
             "class_id": class_id,
+            "features": {
+                "depth": len(list(tag.parents)),
+                "text_len": len(block_text),
+                "link_density": link_char_count / max(len(block_text), 1),
+                "n_links": len(links_in),
+                "rel_pos": block_index / max(total_blocks, 1),
+            },
         }
 
     @staticmethod
@@ -297,7 +432,8 @@ if __name__ == "__main__":
     import sys
 
     target_url = sys.argv[1] if len(sys.argv) > 1 else input("URL: ").strip()
-    result = HtmlParser().parse_url(target_url)
+    with HtmlParser() as parser:
+        result = parser.parse_url(target_url)
     print(json.dumps(result.to_dict(), ensure_ascii=False, indent=2))
     print(
         f"text: {len(result.text)} / images: {len(result.images)} / links: {len(result.links)}"
