@@ -8,3 +8,5 @@
 
 *.json
 *.backup
+*.pt
+*.joblib

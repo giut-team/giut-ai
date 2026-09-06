@@ -18,6 +18,8 @@ if __name__ == "__main__":
         image_labels = []
         link_labels = []
 
+        page_id = 0
+
         for label, urls in TRAIN_URLS.items():
             for url in urls:
                 try:
@@ -25,7 +27,7 @@ if __name__ == "__main__":
 
                     for t in parsed.text:
                         id = f"T{len(text)+1:06d}"
-                        text.append({"id": id, **t})
+                        text.append({"id": id, "page_id": page_id, **t})
                         text_labels.append(
                             {
                                 "id": id,
@@ -41,7 +43,7 @@ if __name__ == "__main__":
 
                     for i in parsed.images:
                         id = f"I{len(images)+1:06d}"
-                        images.append({"id": id, **t})
+                        images.append({"id": id, "page_id": page_id, **t})
                         image_labels.append(
                             {
                                 "id": id,
@@ -57,7 +59,7 @@ if __name__ == "__main__":
 
                     for l in parsed.links:
                         id = f"L{len(links)+1:06d}"
-                        links.append({"id": id, **t})
+                        links.append({"id": id, "page_id": page_id, **t})
                         link_labels.append(
                             {
                                 "id": id,
@@ -74,7 +76,8 @@ if __name__ == "__main__":
                 except Exception as e:
                     print(f"[skip] {url} -> {type(e).__name__}: {e}")
 
-                print(f"[ok] {url}")
+                page_id += 1
+                print(f"[ok] [{page_id}] {url}")
 
         f.write(
             json.dumps(
@@ -96,13 +99,15 @@ if __name__ == "__main__":
         image_labels = []
         link_labels = []
 
+        page_id = 0
+
         for label, urls in TEST_URLS.items():
             for url in urls:
                 try:
                     parsed = htmlParser.parse_url(url)
                     for t in parsed.text:
                         id = f"T{len(text)+1:06d}"
-                        text.append({"id": id, **t})
+                        text.append({"id": id, "page_id": page_id, **t})
                         text_labels.append(
                             {
                                 "id": id,
@@ -118,7 +123,7 @@ if __name__ == "__main__":
 
                     for i in parsed.images:
                         id = f"I{len(images)+1:06d}"
-                        images.append({"id": id, **t})
+                        images.append({"id": id, "page_id": page_id, **t})
                         image_labels.append(
                             {
                                 "id": id,
@@ -134,7 +139,7 @@ if __name__ == "__main__":
 
                     for l in parsed.links:
                         id = f"L{len(links)+1:06d}"
-                        links.append({"id": id, **t})
+                        links.append({"id": id, "page_id": page_id, **t})
                         link_labels.append(
                             {
                                 "id": id,
@@ -151,7 +156,8 @@ if __name__ == "__main__":
                 except Exception as e:
                     print(f"[skip] {url} -> {type(e).__name__}: {e}")
 
-                print(f"[ok] {url}")
+                page_id += 1
+                print(f"[ok] [{page_id}] {url}")
 
         f.write(
             json.dumps(
