@@ -319,8 +319,8 @@ class HtmlParser:
             r"[\u0000\u200B\uFEFF]+", "", content
         )  # 폭이 0인 특수문자 제거
         normalized = re.sub(
-            r"[\t\r\u00A0]+", " ", normalized
-        )  # \t, \r, &nbsp; 등이 하나 또는 연속으로 있을 때 스페이스 1개로 처리
+            r"[\s\u00A0]+", " ", normalized
+        )  # 공백, \t, \r, &nbsp; 등이 하나 또는 연속으로 있을 때 스페이스 1개로 처리
         return normalized
 
     def _remove_noise(self, soup: BeautifulSoup) -> None:

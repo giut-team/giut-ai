@@ -43,7 +43,7 @@ if __name__ == "__main__":
 
                     for i in parsed.images:
                         id = f"I{len(images)+1:06d}"
-                        images.append({"id": id, "page_id": page_id, **t})
+                        images.append({"id": id, "page_id": page_id, **i})
                         image_labels.append(
                             {
                                 "id": id,
@@ -59,7 +59,7 @@ if __name__ == "__main__":
 
                     for l in parsed.links:
                         id = f"L{len(links)+1:06d}"
-                        links.append({"id": id, "page_id": page_id, **t})
+                        links.append({"id": id, "page_id": page_id, **l})
                         link_labels.append(
                             {
                                 "id": id,
@@ -123,7 +123,7 @@ if __name__ == "__main__":
 
                     for i in parsed.images:
                         id = f"I{len(images)+1:06d}"
-                        images.append({"id": id, "page_id": page_id, **t})
+                        images.append({"id": id, "page_id": page_id, **i})
                         image_labels.append(
                             {
                                 "id": id,
@@ -139,7 +139,7 @@ if __name__ == "__main__":
 
                     for l in parsed.links:
                         id = f"L{len(links)+1:06d}"
-                        links.append({"id": id, "page_id": page_id, **t})
+                        links.append({"id": id, "page_id": page_id, **l})
                         link_labels.append(
                             {
                                 "id": id,
