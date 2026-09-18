@@ -3,6 +3,7 @@ from __future__ import annotations
 import ipaddress
 import re
 import socket
+from copy import deepcopy
 from dataclasses import dataclass, field
 from urllib.parse import urljoin, urlparse
 
@@ -210,6 +211,7 @@ class HtmlParser:
         soup = BeautifulSoup(content, features="html.parser")
 
         self._remove_noise(soup)
+        self._split_on_br(soup)
 
         root = soup.body or soup
 
@@ -309,6 +311,27 @@ class HtmlParser:
         return len(text) < CSR_SHELL_TEXT_THRESHOLD
 
     # -- 내부 동작 (parse) -------------------------------------------------
+
+    @staticmethod
+    def _split_on_br(soup: BeautifulSoup) -> None:
+        # <br> 태그를 만나면 부모 태그 2개로 분리
+        for br in list(soup.find_all("br")):
+            parent = br.parent
+            if parent is None:
+                continue
+            if parent is soup or parent.name in ROOT_TAGS:
+                # 문서/html/body 컨테이너 자체는 복제하지 않음
+                br.replace_with("\n")
+                continue
+
+            following = soup.new_tag(parent.name, attrs=deepcopy(parent.attrs))
+            parent.insert_after(following)
+            # 잘못 닫힌 <br> 안으로 파싱된 내용도 다음 구간에 보존한다
+            for child in list(br.contents):
+                following.append(child.extract())
+            for sibling in list(br.next_siblings):
+                following.append(sibling.extract())
+            br.decompose()
 
     def _tokenize(self, *values: str) -> set[str]:
         text = " ".join(values).lower()
