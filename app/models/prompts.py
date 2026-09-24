@@ -5,15 +5,16 @@ OPENAI_LLM_PROMPT = """
 
 반드시 아래 키를 모두 포함한 JSON 객체 하나만 출력하고, JSON 앞뒤에 다른 텍스트를 붙이지 마라.
 
-- title (string): 공모전명 (---한 명사형으로 작성)
+- title (string): 공모전명 (연도, 횟수, 수식어 등 모두 포함하여 명사형으로 작성)
 - host_organization (string): 주최기관 (후원기관은 미포함)
-- target_participants (string): 참가 대상 (---한 명사형으로 작성)
+- target_participants (string): 참가 대상 (명사형으로 작성, 부문별로 다른 경우에도 모두 작성)
 - application_start_at (string, YYYY-MM-DD 형식): 접수 시작일
 - application_end_at (string, YYYY-MM-DD 형식): 접수 마감일
-- prize (string): 총 상금 규모, 1등 상금 규모(명시된 경우)
-- is_competition (boolean): 공모전/대외활동 등 참가 가능한 활동인지 여부
-- is_team (boolean): 팀 참가 가능 여부
-- category (string): 대회/활동 카테고리 ('기획', '디자인', 'IT/개발', 'AI/데이터', '서포터즈', '예체능', '기타' 중 택1)
+- prize (string): 총 상금 규모(명시된 경우), 1등 상금 액수 (0,000만원 형식)
+- activity_kind (string): 활동 종류 또는 성격('공모전', '경진대회', '해커톤', '서포터즈', '봉사', '창업', '교육/프로그램', '해외탐방', '행사/네트워킹', '기타' 중 택1), 참가 가능한 활동이 아닐 경우 null
+- category (list[string]): 활동 분야 ('기획/아이디어', '홍보/마케팅', 'AI/데이터', 'IT/개발', '과학/공학', '디자인', '사진/영상/콘텐츠', '문학/글쓰기', '학술/연구', '문화/예체능', '기타' 중 택1), 한 가지 분야만으로 특정할 수 없을 경우 최대 3개까지 분야 선택 허용
+- is_team (boolean): 팀 참가 가능 여부 (팀 가능 여부가 명시되지 않은 경우 '개인 참가만 가능'이라는 확실한 근거가 없으면 null)
+- is_team_evidence (string): 팀 참가 가능 여부가 명시된 근거 문장 1개
 - summary (string): 본문 핵심을 2~3문장으로 요약
 """.strip()
 
@@ -24,14 +25,15 @@ OPENAI_VLM_PROMPT = """
 
 반드시 아래 키를 모두 포함한 JSON 객체 하나만 출력하고, JSON 앞뒤에 다른 텍스트를 붙이지 마라.
 
-- title (string): 공모전명 (---한 명사형으로 작성)
+- title (string): 공모전명 (연도, 횟수, 수식어 등 모두 포함하여 명사형으로 작성)
 - host_organization (string): 주최기관 (후원기관은 미포함)
-- target_participants (string): 참가 대상 (---한 명사형으로 작성)
+- target_participants (string): 참가 대상 (명사형으로 작성, 부문별로 다른 경우에도 모두 작성)
 - application_start_at (string, YYYY-MM-DD 형식): 접수 시작일
 - application_end_at (string, YYYY-MM-DD 형식): 접수 마감일
-- prize (string): 총 상금 규모, 1등 상금 규모(명시된 경우)
-- is_competition (boolean): 공모전/대외활동 등 참가 가능한 활동인지 여부
-- is_team (boolean): 팀 참가 가능 여부
-- category (string): 대회/활동 카테고리 ('기획', '디자인', 'IT/개발', 'AI/데이터', '서포터즈', '예체능', '기타' 중 택1)
+- prize (string): 총 상금 규모(명시된 경우), 1등 상금 액수 (0,000만원 형식)
+- activity_kind (string): 활동 종류 또는 성격('공모전', '경진대회', '해커톤', '서포터즈', '봉사', '창업', '교육/프로그램', '해외탐방', '행사/네트워킹', '기타' 중 택1), 참가 가능한 활동이 아닐 경우 null
+- category (list[string]): 활동 분야 ('기획/아이디어', '홍보/마케팅', 'AI/데이터', 'IT/개발', '과학/공학', '디자인', '사진/영상/콘텐츠', '문학/글쓰기', '학술/연구', '문화/예체능', '기타' 중 택1), 한 가지 분야만으로 특정할 수 없을 경우 최대 3개까지 분야 선택 허용
+- is_team (boolean): 팀 참가 가능 여부 (팀 가능 여부가 명시되지 않은 경우 '개인 참가만 가능'이라는 확실한 근거가 없으면 null)
+- is_team_evidence (string): 팀 참가 가능 여부가 명시된 근거 문장 1개
 - summary (string): 본문 핵심을 2~3문장으로 요약
 """.strip()

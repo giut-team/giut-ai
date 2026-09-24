@@ -96,22 +96,28 @@ images_paths = [
 
 if __name__ == "__main__":
 
+    PAGE_ID = 0
+
+    # text
+    with open("html_data/test/test_blocks.json", "r") as f:
+        blocks = json.load(f)["text"]
+        page_blocks = []
+
+        for b in blocks:
+            if b["page_id"] > PAGE_ID:
+                break
+            if b["page_id"] == PAGE_ID:
+                page_blocks.append(b)
+
+    page_text = _load_page_text(page_blocks)
+
+    ## image
+    # images = [Image.open(path).convert("RGB") for path in images_paths[4]]
+
     started_at = datetime.now()
-
-    images = [Image.open(path).convert("RGB") for path in images_paths[4]]
-    fields_result = extract_fields_from_images(images)
-
+    fields_result = extract_fields_from_text(page_text)
+    # fields_result = extract_fields_from_images(images)
     ended_at = datetime.now()
 
     print(fields_result.format())
     print("time elapsed:", ended_at - started_at)
-
-
-# if __name__ == "__main__":
-#     if len(sys.argv) > 1:
-#         page_text = _load_page_text(sys.argv[1])
-#     else:
-#         page_text = sys.stdin.read()
-
-#     fields_result = extract_fields_from_text(page_text)
-#     print(fields_result.format())
