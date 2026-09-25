@@ -1,6 +1,7 @@
 .venv/
 .vscode/
 .agents/
+.claude/
 
 *.pyc
 

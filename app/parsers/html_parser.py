@@ -400,7 +400,7 @@ class HtmlParser:
             "text": block_text[:256],
             "tag": tag.name,
             "class_id": class_id,
-            "features": {
+            "num_features": {
                 "depth": len(list(tag.parents)),
                 "text_len": len(block_text),
                 "link_density": link_char_count / max(len(block_text), 1),
