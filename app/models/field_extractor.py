@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 import base64
-import json
 from io import BytesIO
 from pathlib import Path
 import re
 import sys
-import datetime
+from urllib.parse import urlparse
+
+import requests
 from PIL import Image
 
 from app.models.openai_client import create_json_completion
@@ -14,13 +15,13 @@ from app.models.dto import ExtractedFields
 from app.models.prompts import OPENAI_LLM_PROMPT, OPENAI_VLM_PROMPT
 
 
-def _load_page_text(blocks: list[dict]) -> str:
+def load_page_text(blocks: list[dict]) -> str:
     page_text = ""
 
     for b in blocks:
         block_text = b.get("text", None)
         if block_text is not None:
-            page_text.append(block_text + "\n")
+            page_text += block_text + "\n"
 
     return page_text
 
@@ -30,9 +31,9 @@ async def extract_fields_from_text(page_text: str) -> ExtractedFields:
         messages=[
             {
                 "role": "developer",
-                "content": {"type": "text", "text": OPENAI_LLM_PROMPT},
+                "content": [{"type": "text", "text": OPENAI_LLM_PROMPT}],
             },
-            {"role": "user", "content": {"type": "text", "text": page_text}},
+            {"role": "user", "content": [{"type": "text", "text": page_text}]},
         ],
         response_format=ExtractedFields,
     )
@@ -40,8 +41,21 @@ async def extract_fields_from_text(page_text: str) -> ExtractedFields:
     return response.choices[0].message.parsed
 
 
+def _download_image_bytes(url: str, timeout: float = 30.0) -> bytes:
+    # HTTP(S) 이미지 주소에서 바이트 데이터 다운로드
+    parsed_url = urlparse(url)
+    if parsed_url.scheme.lower() not in {"http", "https"} or not parsed_url.netloc:
+        raise ValueError("이미지 주소가 HTTP(S) URL이 아님")
+
+    with requests.get(
+        url, headers={"User-Agent": "Mozilla/5.0"}, timeout=timeout
+    ) as response:
+        response.raise_for_status()
+        return response.content
+
+
 def convert_images_to_base64(images_paths: list[str]) -> list[str]:
-    # 로컬 이미지 파일을 Base64 데이터 URL로 변환
+    # 로컬 이미지 파일 또는 HTTP(S) 이미지를 Base64 데이터 URL로 변환
     mime_types = {
         "JPEG": "image/jpeg",
         "PNG": "image/png",
@@ -51,7 +65,10 @@ def convert_images_to_base64(images_paths: list[str]) -> list[str]:
     data_urls: list[str] = []
 
     for image_path in images_paths:
-        image_bytes = Path(image_path).read_bytes()
+        if image_path.lower().startswith(("http://", "https://")):
+            image_bytes = _download_image_bytes(image_path)
+        else:
+            image_bytes = Path(image_path).read_bytes()
 
         with Image.open(BytesIO(image_bytes)) as image:
             image.load()
@@ -77,47 +94,12 @@ async def extract_fields_from_images(images: list[Image.Image]) -> ExtractedFiel
                 "role": "developer",
                 "content": {"type": "text", "text": OPENAI_VLM_PROMPT},
             },
-            {"role": "user", "content": {"type": "image", "image_url": ""}},
+            {
+                "role": "user",
+                "content": [{"type": "image", "image_url": url} for url in images],
+            },
         ],
         response_format=ExtractedFields,
     )
 
     return response.choices[0].message.parsed
-
-
-images_paths = [
-    ["campuspick.jpg"],
-    ["dacon.jpg"],
-    ["thinkyou_1.png"],
-    ["thinkyou_2.jpg"],
-    ["wevity_1.jpg", "wevity_2.jpg"],
-]
-
-
-if __name__ == "__main__":
-
-    PAGE_ID = 0
-
-    # text
-    with open("html_data/test/test_blocks.json", "r") as f:
-        blocks = json.load(f)["text"]
-        page_blocks = []
-
-        for b in blocks:
-            if b["page_id"] > PAGE_ID:
-                break
-            if b["page_id"] == PAGE_ID:
-                page_blocks.append(b)
-
-    page_text = _load_page_text(page_blocks)
-
-    ## image
-    # images = [Image.open(path).convert("RGB") for path in images_paths[4]]
-
-    started_at = datetime.now()
-    fields_result = extract_fields_from_text(page_text)
-    # fields_result = extract_fields_from_images(images)
-    ended_at = datetime.now()
-
-    print(fields_result.format())
-    print("time elapsed:", ended_at - started_at)
