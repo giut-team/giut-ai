@@ -33,24 +33,30 @@ async def test_extract_fields():
         f"tests/results/llm_results_{datetime.now()}.json".replace(":", "_"),
         "w",
     ) as f_result:
-        for id, blocks in page_blocks.items():
-            page_text = load_page_text(blocks)
+        try:
+            f_result.write("[")
 
-            started_at = datetime.now()
-            fields_result = await extract_fields_from_text(page_text)
-            ended_at = datetime.now()
+            for id, blocks in page_blocks.items():
+                page_text = load_page_text(blocks)
 
-            print(fields_result.format())
-            print("elapsed_time:", ended_at - started_at)
+                started_at = datetime.now()
+                fields_result = await extract_fields_from_text(page_text)
+                ended_at = datetime.now()
 
-            result_block = {
-                "page_id": id,
-                "elapsed_time": str(ended_at - started_at),
-                "response": ExtractedFields.to_dict(fields_result),
-                "comparison": fields_result.compare(
-                    ExtractedFields.from_dict(page_labels[id])
-                ),
-            }
+                print(fields_result.format())
+                print("elapsed_time:", ended_at - started_at)
 
-            add_data = json.dumps(result_block, ensure_ascii=False)
-            f_result.write(add_data)
+                result_block = {
+                    "page_id": id,
+                    "elapsed_time": str(ended_at - started_at),
+                    "response": ExtractedFields.to_dict(fields_result),
+                    "comparison": fields_result.compare(
+                        ExtractedFields.from_dict(page_labels[id])
+                    ),
+                }
+
+                add_data = json.dumps(result_block, ensure_ascii=False)
+                f_result.write(add_data + ",")
+
+        finally:
+            f_result.write("]")

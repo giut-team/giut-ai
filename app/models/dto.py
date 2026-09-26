@@ -89,7 +89,7 @@ class ExtractedFields:
                 categories.append(CategoryEnum(item))
             except (ValueError, TypeError):
                 logger.warning("LLM 응답 활동분야 값 오류: %r", item)
-        return categories or None
+        return categories
 
     def format(self) -> str:
         formatted = ""
@@ -128,12 +128,12 @@ class ExtractedFields:
             return "EXACT"
 
         if isinstance(value, str) and isinstance(target_value, str):
-            # 문자열 타입 정규화 후 일부 (4단어 이상) 겹칠 경우 CLOSE로 처리
+            # 문자열 타입 정규화 후 일부 (더 짧은 쪽 기준 70% 이상) 겹칠 경우 CLOSE로 처리
 
             words = set(self._normalize(value).split())
             target_words = set(self._normalize(target_value).split())
 
-            if len(words & target_words) >= 4:
+            if len(words & target_words) >= min(len(words), len(target_words)) * 0.7:
                 return "CLOSE"
 
         return "MISS"
