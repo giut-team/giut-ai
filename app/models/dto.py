@@ -46,10 +46,11 @@ class CategoryEnum(Enum):
 class ExtractedFields:
     title: Optional[str]
     host_organization: Optional[str]
-    target_participants: Optional[str]
+    is_univ_possible: Optional[bool]
     application_start_at: Optional[date]
     application_end_at: Optional[date]
     prize: Optional[str]
+    total_prize_amount: Optional[int]
     activity_kind: Optional[ActivityKindEnum]
     category: list[CategoryEnum]
     is_team: Optional[bool]
