@@ -122,7 +122,7 @@ class ExtractedFields:
         spaces_removed = re.sub(r"\s+", " ", unnecessary_char_removed)
         return spaces_removed
 
-    def _compare_field(self, value, target_value):
+    def _compare_field(self, value, target_value, is_prize):
         if isinstance(value, list) and isinstance(target_value, list):
             # 카테고리 리스트에 대해서는 정답 리스트 안에 있는 것/추가/누락된 것을 각각 숫자로 바교
             results = {"EXACT": 0, "ADDED": 0, "OMITTED": 0}
@@ -146,8 +146,15 @@ class ExtractedFields:
             return "EXACT"
 
         if isinstance(value, str) and isinstance(target_value, str):
-            # 문자열 타입 정규화 후 일부 (더 짧은 쪽 기준 70% 이상) 겹칠 경우 CLOSE로 처리
+            if is_prize:
+                # 상금 텍스트 비교는 금액 정규화 후 진행
+                value = self._normalize_prize(value)
+                target_value = self._normalize_prize(target_value)
 
+                if value == target_value:
+                    return "PRIZE_NORMALIZED"
+
+            # 문자열 타입 정규화 후 일부 (더 짧은 쪽 기준 70% 이상) 겹칠 경우 CLOSE로 처리
             words = set(self._normalize(value).split())
             target_words = set(self._normalize(target_value).split())
 
@@ -168,11 +175,8 @@ class ExtractedFields:
             value = getattr(self, field.name)
             target_value = getattr(target, field.name)
 
-            if field.name == "prize":
-                # 상금 텍스트 비교는 가격 정규화 후 진행
-                value = self._normalize_prize(value)
-                target_value = self._normalize_prize(value)
-
-            results[field.name] = self._compare_field(value, target_value)
+            results[field.name] = self._compare_field(
+                value, target_value, (field.name == "prize")
+            )
 
         return results

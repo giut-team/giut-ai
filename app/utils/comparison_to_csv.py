@@ -20,6 +20,7 @@ FIELD_COLUMNS = [
     "field",
     "total",
     "exact",
+    "prize_normalized",
     "close",
     "exact_plus_close",
     "miss",
@@ -29,9 +30,9 @@ FIELD_COLUMNS = [
 CATEGORY_COLUMNS = [
     "field",
     "total",
-    "exact_count",
-    "added_count",
-    "omitted_count",
+    "exact",
+    "added",
+    "omitted",
     "precision",
     "recall",
     "f1",
@@ -81,24 +82,28 @@ def summarize_comparisons(records: list) -> tuple[list[dict], dict]:
             else:
                 if not isinstance(value, str) or value not in {
                     "EXACT",
+                    "PRIZE_NORMALIZED",
                     "CLOSE",
                     "MISS",
                 }:
                     raise ValueError(
-                        f"{location}은 EXACT, CLOSE, MISS 중 하나여야 합니다."
+                        f"{location}은 EXACT, PRIZE_NORMALIZED, CLOSE, MISS 중 하나여야 합니다."
                     )
-                counts = fields.setdefault(field, {"EXACT": 0, "CLOSE": 0, "MISS": 0})
+                counts = fields.setdefault(
+                    field, {"EXACT": 0, "PRIZE_NORMALIZED": 0, "CLOSE": 0, "MISS": 0}
+                )
                 counts[value] += 1
 
     field_rows = []
     for field, counts in fields.items():
         total = sum(counts.values())
-        accepted = counts["EXACT"] + counts["CLOSE"]
+        accepted = counts["EXACT"] + counts["PRIZE_NORMALIZED"] + counts["CLOSE"]
         field_rows.append(
             {
                 "field": field,
                 "total": total,
                 "exact": counts["EXACT"],
+                "prize_normalized": counts["PRIZE_NORMALIZED"],
                 "close": counts["CLOSE"],
                 "exact_plus_close": accepted,
                 "miss": counts["MISS"],
@@ -110,9 +115,9 @@ def summarize_comparisons(records: list) -> tuple[list[dict], dict]:
     category_row = {
         "field": "category",
         "total": category_total,
-        "exact_count": exact,
-        "added_count": added,
-        "omitted_count": omitted,
+        "exact": exact,
+        "added": added,
+        "omitted": omitted,
         "precision": percentage(exact, exact + added),
         "recall": percentage(exact, exact + omitted),
         "f1": percentage(2 * exact, 2 * exact + added + omitted),
