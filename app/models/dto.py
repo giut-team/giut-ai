@@ -100,6 +100,23 @@ class ExtractedFields:
                 formatted += f"{field.name}: {value}\n"
         return formatted
 
+    def _normalize_prize(self, value: str) -> str:
+        unit_normalized = re.sub(r"\s*만\s*원", "0000원", value)
+
+        comma_removed = ""
+        for i in range(len(unit_normalized)):
+            if (
+                0 < i < len(unit_normalized)
+                and unit_normalized[i] == ","
+                and "0" <= unit_normalized[i - 1] <= "9"
+                and "0" <= unit_normalized[i + 1] <= "9"
+            ):
+                continue
+            else:
+                comma_removed += unit_normalized[i]
+
+        return comma_removed
+
     def _normalize(self, value: str) -> str:
         unnecessary_char_removed = re.sub(r"[^a-zA-Z0-9가-힣]", " ", value)
         spaces_removed = re.sub(r"\s+", " ", unnecessary_char_removed)
@@ -144,12 +161,17 @@ class ExtractedFields:
         results = {}
 
         for field in fields(self):
-            # 요약문 비교는 생략
             if field.name == "summary":
+                # 요약문 비교는 생략
                 continue
 
             value = getattr(self, field.name)
             target_value = getattr(target, field.name)
+
+            if field.name == "prize":
+                # 상금 텍스트 비교는 가격 정규화 후 진행
+                value = self._normalize_prize(value)
+                target_value = self._normalize_prize(value)
 
             results[field.name] = self._compare_field(value, target_value)
 

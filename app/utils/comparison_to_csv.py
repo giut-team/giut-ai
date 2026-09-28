@@ -132,8 +132,8 @@ def export_comparisons(
 
     destination = Path(output_dir) if output_dir is not None else input_path.parent
     destination.mkdir(parents=True, exist_ok=True)
-    fields_path = destination / f"{input_path.stem}_comparison_fields.csv"
-    category_path = destination / f"{input_path.stem}_comparison_category.csv"
+    fields_path = destination / "comparison_fields.csv"
+    category_path = destination / "comparison_category.csv"
     for path, columns, rows in (
         (fields_path, FIELD_COLUMNS, field_rows),
         (category_path, CATEGORY_COLUMNS, [category_row]),
