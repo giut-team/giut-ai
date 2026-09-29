@@ -10,23 +10,14 @@ tokenizer = AutoTokenizer.from_pretrained("klue/roberta-base")
 encoder = AutoModel.from_pretrained("klue/roberta-base")
 
 
-def _pair_text(block: dict) -> str:
-    # "text [SEP] src/href" (src/href 없으면 text만)
-    seg = block.get("text", "")
-    src_ref = block.get("src") or block.get("href")
-    if src_ref:
-        seg = f"{seg} {tokenizer.sep_token} {src_ref}"
-    return seg
-
-
 def tokenize(blocks: list[dict], max_length: int = MAX_LENGTH):
-    # class_id [SEP] text ([SEP] src/href) 순서로 토큰화, 패딩은 배치 내 최대 길이에 맞춤
+    # class_id [SEP] text 순서로 토큰화, 패딩은 배치 내 최대 길이에 맞춤
     class_ids = [b.get("class_id", "") for b in blocks]
-    pair_texts = [_pair_text(b) for b in blocks]
+    texts = [b.get("text", "") for b in blocks]
 
     return tokenizer(
         class_ids,
-        pair_texts,
+        texts,
         padding=True,
         truncation=True,
         max_length=max_length,
