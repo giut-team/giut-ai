@@ -62,7 +62,7 @@ async def test_extract_fields():
                 ended_at = datetime.now()
 
                 print(fields_result.format())
-                print("elapsed_time:", ended_at - started_at)
+                print("elapsed_time:", ended_at - started_at, "\n")
 
                 input_tokens = usage.prompt_tokens
                 cached_input_tokens = usage.prompt_tokens_details.cached_tokens

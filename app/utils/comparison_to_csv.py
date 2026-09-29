@@ -27,26 +27,26 @@ FIELD_COLUMNS = [
     "exact_rate",
     "exact_plus_close_rate",
 ]
-CATEGORY_COLUMNS = [
-    "field",
-    "total",
-    "exact",
-    "added",
-    "omitted",
-    "precision",
-    "recall",
-    "f1",
-    "full_match_count",
-    "full_match_rate",
-    "both_empty_count",
-]
+# CATEGORY_COLUMNS = [
+#     "field",
+#     "total",
+#     "exact",
+#     "added",
+#     "omitted",
+#     "precision",
+#     "recall",
+#     "f1",
+#     "full_match_count",
+#     "full_match_rate",
+#     "both_empty_count",
+# ]
 
 
 def percentage(numerator: int, denominator: int) -> str:
     return f"{100 * numerator / denominator:.2f}" if denominator else ""
 
 
-def summarize_comparisons(records: list) -> tuple[list[dict], dict]:
+def summarize_comparisons(records: list) -> tuple[list[dict]]:
     if not isinstance(records, list):
         raise ValueError("JSON 최상위 값은 문서 배열이어야 합니다.")
 
@@ -60,39 +60,20 @@ def summarize_comparisons(records: list) -> tuple[list[dict], dict]:
 
         for field, value in record["comparison"].items():
             location = f"records[{index}].comparison.{field}"
-            if field == "category":
-                if not isinstance(value, dict) or set(value) != {
-                    "EXACT",
-                    "ADDED",
-                    "OMITTED",
-                }:
-                    raise ValueError(
-                        f"{location}에는 EXACT, ADDED, OMITTED가 필요합니다."
-                    )
-                if any(type(count) is not int or count < 0 for count in value.values()):
-                    raise ValueError(f"{location}의 개수는 0 이상의 정수여야 합니다.")
-                category_total += 1
-                exact += value["EXACT"]
-                added += value["ADDED"]
-                omitted += value["OMITTED"]
-                if value["ADDED"] == 0 and value["OMITTED"] == 0:
-                    full_match += 1
-                    if value["EXACT"] == 0:
-                        both_empty += 1
-            else:
-                if not isinstance(value, str) or value not in {
-                    "EXACT",
-                    "PRIZE_NORMALIZED",
-                    "CLOSE",
-                    "MISS",
-                }:
-                    raise ValueError(
-                        f"{location}은 EXACT, PRIZE_NORMALIZED, CLOSE, MISS 중 하나여야 합니다."
-                    )
-                counts = fields.setdefault(
-                    field, {"EXACT": 0, "PRIZE_NORMALIZED": 0, "CLOSE": 0, "MISS": 0}
+
+            if not isinstance(value, str) or value not in {
+                "EXACT",
+                "PRIZE_NORMALIZED",
+                "CLOSE",
+                "MISS",
+            }:
+                raise ValueError(
+                    f"{location}은 EXACT, PRIZE_NORMALIZED, CLOSE, MISS 중 하나여야 합니다."
                 )
-                counts[value] += 1
+            counts = fields.setdefault(
+                field, {"EXACT": 0, "PRIZE_NORMALIZED": 0, "CLOSE": 0, "MISS": 0}
+            )
+            counts[value] += 1
 
     field_rows = []
     for field, counts in fields.items():
@@ -112,20 +93,20 @@ def summarize_comparisons(records: list) -> tuple[list[dict], dict]:
             }
         )
 
-    category_row = {
-        "field": "category",
-        "total": category_total,
-        "exact": exact,
-        "added": added,
-        "omitted": omitted,
-        "precision": percentage(exact, exact + added),
-        "recall": percentage(exact, exact + omitted),
-        "f1": percentage(2 * exact, 2 * exact + added + omitted),
-        "full_match_count": full_match,
-        "full_match_rate": percentage(full_match, category_total),
-        "both_empty_count": both_empty,
-    }
-    return field_rows, category_row
+    # category_row = {
+    #     "field": "category",
+    #     "total": category_total,
+    #     "exact": exact,
+    #     "added": added,
+    #     "omitted": omitted,
+    #     "precision": percentage(exact, exact + added),
+    #     "recall": percentage(exact, exact + omitted),
+    #     "f1": percentage(2 * exact, 2 * exact + added + omitted),
+    #     "full_match_count": full_match,
+    #     "full_match_rate": percentage(full_match, category_total),
+    #     "both_empty_count": both_empty,
+    # }
+    return field_rows  # , category_row
 
 
 def export_comparisons(
@@ -133,22 +114,19 @@ def export_comparisons(
 ) -> tuple[Path, Path]:
     input_path = Path(input_path)
     with input_path.open(encoding="utf-8-sig") as source:
-        field_rows, category_row = summarize_comparisons(json.load(source))
+        field_rows = summarize_comparisons(json.load(source))
 
     destination = Path(output_dir) if output_dir is not None else input_path.parent
     destination.mkdir(parents=True, exist_ok=True)
     fields_path = destination / "comparison_fields.csv"
-    category_path = destination / "comparison_category.csv"
-    for path, columns, rows in (
-        (fields_path, FIELD_COLUMNS, field_rows),
-        (category_path, CATEGORY_COLUMNS, [category_row]),
-    ):
-        # Excel에서도 한글을 읽을 수 있도록 UTF-8 BOM 포함
-        with path.open("w", encoding="utf-8-sig", newline="") as output:
-            writer = csv.DictWriter(output, fieldnames=columns)
-            writer.writeheader()
-            writer.writerows(rows)
-    return fields_path, category_path
+
+    # Excel에서도 한글을 읽을 수 있도록 UTF-8 BOM 포함
+    with fields_path.open("w", encoding="utf-8-sig", newline="") as output:
+        writer = csv.DictWriter(output, fieldnames=FIELD_COLUMNS)
+        writer.writeheader()
+        writer.writerows(field_rows)
+
+    return fields_path
 
 
 def main() -> None:
@@ -159,11 +137,10 @@ def main() -> None:
     )
     args = parser.parse_args()
     try:
-        paths = export_comparisons(args.input_json, args.output_dir)
+        path = export_comparisons(args.input_json, args.output_dir)
     except (OSError, ValueError) as error:
         parser.exit(1, f"오류: {error}\n")
-    for path in paths:
-        print(path)
+    print(path)
 
 
 if __name__ == "__main__":

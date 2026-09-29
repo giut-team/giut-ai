@@ -52,7 +52,7 @@ class ExtractedFields:
     total_prize_amount: Optional[int]
     prize: Optional[str]
     activity_kind: Optional[ActivityKindEnum]
-    category: list[CategoryEnum]
+    category: Optional[CategoryEnum]
     is_team: Optional[bool]
     is_team_evidence: Optional[str]  # 팀 참가 가능하다고 판단한 근거 문장
     summary: Optional[str] = None
@@ -80,17 +80,14 @@ class ExtractedFields:
 
     @field_validator("category", mode="before")
     @classmethod
-    def _validate_category(cls, value: object) -> object:
-        if not isinstance(value, list):
-            return value
-
-        categories = []
-        for item in value:
-            try:
-                categories.append(CategoryEnum(item))
-            except (ValueError, TypeError):
-                logger.warning("LLM 응답 활동분야 값 오류: %r", item)
-        return categories
+    def _validate_category(cls, value: object) -> Optional[CategoryEnum]:
+        if value is None:
+            return None
+        try:
+            return CategoryEnum(value)
+        except (ValueError, TypeError):
+            logger.warning("LLM 응답 활동분야 값 오류: %r", value)
+            return None
 
     def format(self) -> str:
         formatted = ""
