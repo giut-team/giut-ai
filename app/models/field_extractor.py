@@ -87,10 +87,8 @@ def convert_images_to_base64(images_paths: list[str]) -> list[str]:
     return data_urls
 
 
-async def extract_fields_from_images(
-    images: list[Image.Image],
-) -> tuple[ExtractedFields, object]:
-    response, usage = await create_json_completion(
+async def extract_fields_from_images(images: list[Image.Image]):
+    response = await create_json_completion(
         messages=[
             {
                 "role": "developer",
@@ -104,4 +102,4 @@ async def extract_fields_from_images(
         response_format=ExtractedFields,
     )
 
-    return response.choices[0].message.parsed, usage
+    return (response.choices[0].message.parsed, response.usage)
