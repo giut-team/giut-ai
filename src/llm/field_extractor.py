@@ -10,9 +10,9 @@ from urllib.parse import urlparse
 import requests
 from PIL import Image
 
-from app.models.openai_client import create_json_completion
-from app.models.dto import ExtractedFields
-from app.models.prompts import OPENAI_LLM_PROMPT, OPENAI_VLM_PROMPT
+from src.llm.openai_client import create_json_completion
+from src.llm.dto import ExtractedFields
+from src.llm.prompts import OPENAI_LLM_PROMPT, OPENAI_VLM_PROMPT
 
 
 def load_page_text(blocks: list[dict]) -> str:

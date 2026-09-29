@@ -7,10 +7,5 @@
 
 .env
 
-html_data/
-*.json
-*.backup
+data/backup/
 *.csv
-
-*.pt
-*.joblib

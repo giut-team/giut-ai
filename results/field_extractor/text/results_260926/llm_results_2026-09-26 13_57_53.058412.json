@@ -1,0 +1,1481 @@
+[
+	{
+		"page_id": 0,
+		"elapsed_time": "0:00:36.741722",
+		"response": {
+			"title": "제3회 팩트체킹 공모전",
+			"host_organization": "방송기자연합회",
+			"target_participants": "일반부 개인/팀(4인 이하) / 학생부 개인/학생(2~4인) + 지도교사 1인(총 5인 이하)",
+			"application_start_at": "2020-06-15",
+			"application_end_at": "2020-10-05",
+			"prize": "총시상금 3천만원~1천만원 / 1등시상금 500원",
+			"activity_kind": "ActivityKindEnum.CONTEST",
+			"category": "[<CategoryEnum.PHOTO_CONTENTS: '사진/영상/콘텐츠'>, <CategoryEnum.LITERATURE: '문학/글쓰기'>, <CategoryEnum.IT_DEVELOP: 'IT/개발'>]",
+			"is_team": "True",
+			"is_team_evidence": "참가 자격 : 개인 및 팀(내국인)",
+			"summary": "방송기자연합회가 주최하는 제3회 팩트체킹 공모전으로, 일반부와 학생부로 구분되며 팩트체크 부문과 콘텐츠 부문으로 개인 또는 팀이 참여한다. 시상은 방송사 상과 구글상 등으로 구성되며, 접수 기간은 2020년 6월 15일부터 10월 5일까지이다."
+		},
+		"comparison": {
+			"title": "EXACT",
+			"host_organization": "EXACT",
+			"target_participants": "CLOSE",
+			"application_start_at": "EXACT",
+			"application_end_at": "EXACT",
+			"prize": "MISS",
+			"activity_kind": "EXACT",
+			"category": { "EXACT": 3, "ADDED": 0, "OMITTED": 0 },
+			"is_team": "EXACT",
+			"is_team_evidence": "CLOSE"
+		}
+	},
+	{
+		"page_id": 1,
+		"elapsed_time": "0:00:27.497978",
+		"response": {
+			"title": "2023 대한민국 공익광고제 공모전",
+			"host_organization": "한국방송광고진흥공사",
+			"target_participants": "전국민(주한 외국인 및 재외국민 참여 가능, 단 한글 작품에 한함) / 일반부 / 대학생부 / 청소년부",
+			"application_start_at": "2023-08-10",
+			"application_end_at": "2023-09-08",
+			"prize": "총 상금: 8,200만원 / 1등 상금: 1,000만원",
+			"activity_kind": "ActivityKindEnum.CONTEST",
+			"category": "[<CategoryEnum.MARKETING: '홍보/마케팅'>, <CategoryEnum.PHOTO_CONTENTS: '사진/영상/콘텐츠'>, <CategoryEnum.DESIGN: '디자인'>]",
+			"is_team": "True",
+			"is_team_evidence": "개인 혹은 팀(최대 3명)으로 응모 가능",
+			"summary": "한국방송광고진흥공사 주최의 2023년 대한민국 공익광고제 공모전으로 전국민을 대상으로 일반부/대학생부/청소년부에 응모할 수 있다. 응모 기간은 2023-08-10부터 2023-09-08까지이며, 시상 내역은 총상금 8,200만원과 1등 상금 1,000만원으로 구성된다. 응모 형식은 TV/스토리보드 및 인쇄, 영상, 이모티콘 등 부문별로 다양하며 개인 또는 최대 3명의 팀으로 참여할 수 있다."
+		},
+		"comparison": {
+			"title": "EXACT",
+			"host_organization": "EXACT",
+			"target_participants": "CLOSE",
+			"application_start_at": "EXACT",
+			"application_end_at": "EXACT",
+			"prize": "EXACT",
+			"activity_kind": "EXACT",
+			"category": { "EXACT": 2, "ADDED": 1, "OMITTED": 0 },
+			"is_team": "EXACT",
+			"is_team_evidence": "CLOSE"
+		}
+	},
+	{
+		"page_id": 2,
+		"elapsed_time": "0:00:38.098334",
+		"response": {
+			"title": "템플스테이 20주년 대국민 공모전",
+			"host_organization": "한국불교문화사업단",
+			"target_participants": "템플스테이에 관심이 있는 누구나 / 성인(대학생 및 일반인), 개인 또는 팀(3인 이내)",
+			"application_start_at": "2022-08-01",
+			"application_end_at": "2022-09-12",
+			"prize": "총 상금: 5,000만원~3,000만원 / 1등 상금: 500만원",
+			"activity_kind": "ActivityKindEnum.CONTEST",
+			"category": "[<CategoryEnum.PHOTO_CONTENTS: '사진/영상/콘텐츠'>, <CategoryEnum.DESIGN: '디자인'>, <CategoryEnum.LITERATURE: '문학/글쓰기'>]",
+			"is_team": "True",
+			"is_team_evidence": "성인(대학생 및 일반인), 개인 또는 팀(3인 이내)",
+			"summary": "템플스테이 20주년 대국민 공모전은 한국불교문화사업단이 주최하고 템플스테이가 주관하는 공모전이다. 템플스테이 체험 분야와 불교 디지털 콘텐츠 분야로 구성되며 각 부문별 대상과 주제가 제시된다. 총상금은 5,000만원~3,000만원이고 1등 상금은 500만원이며 접수 기간은 2022년 8월 1일 ~ 2022년 9월 12일이고 이메일 접수로 진행된다."
+		},
+		"comparison": {
+			"title": "EXACT",
+			"host_organization": "EXACT",
+			"target_participants": "MISS",
+			"application_start_at": "EXACT",
+			"application_end_at": "EXACT",
+			"prize": "CLOSE",
+			"activity_kind": "EXACT",
+			"category": { "EXACT": 2, "ADDED": 1, "OMITTED": 1 },
+			"is_team": "EXACT",
+			"is_team_evidence": "EXACT"
+		}
+	},
+	{
+		"page_id": 3,
+		"elapsed_time": "0:00:29.792618",
+		"response": {
+			"title": "제 31회 HS애드 Young Creator’s Competition 공모전",
+			"host_organization": "HS애드",
+			"target_participants": "국내외 대학 재학생 및 휴학생, 대학원 재학생 및 휴학생, 2018년 8월 졸업예정자, 군복무자",
+			"application_start_at": "2018-06-18",
+			"application_end_at": "2018-07-06",
+			"prize": "총 상금: 2,300 만원 / 1등 상금: 500 만원",
+			"activity_kind": "ActivityKindEnum.CONTEST",
+			"category": "[<CategoryEnum.IDEA: '기획/아이디어'>, <CategoryEnum.MARKETING: '홍보/마케팅'>, <CategoryEnum.DESIGN: '디자인'>]",
+			"is_team": "True",
+			"is_team_evidence": "개인 또는 팀(최대 4명)으로 참가 가능.",
+			"summary": "제 31회 HS애드 Young Creator’s Competition은 국내외 대학 재학생 및 휴학생, 대학원 재학생 및 휴학생의 참여가 가능하고 개인 또는 최대 4명으로 팀 참가가 가능하다. 응모는 온라인으로 신청되며 기획서·크리에이티브 부문 출품 가능하고 시상은 총 2,300만원이며 대상 500만원 등의 상이 수여된다. 저작권은 응모자에게 귀속되며 수상작의 전시·홍보 활용이 가능하고 모방/표절 시 수상 취소 등의 규정이 있다."
+		},
+		"comparison": {
+			"title": "EXACT",
+			"host_organization": "EXACT",
+			"target_participants": "MISS",
+			"application_start_at": "EXACT",
+			"application_end_at": "EXACT",
+			"prize": "MISS",
+			"activity_kind": "EXACT",
+			"category": { "EXACT": 2, "ADDED": 1, "OMITTED": 0 },
+			"is_team": "EXACT",
+			"is_team_evidence": "CLOSE"
+		}
+	},
+	{
+		"page_id": 4,
+		"elapsed_time": "0:00:37.172546",
+		"response": {
+			"title": "제19회 대한민국창작만화공모전",
+			"host_organization": "한국만화영상진흥원",
+			"target_participants": "만 18세 이상의 모든 만화 창작자",
+			"application_start_at": "2021-07-16",
+			"application_end_at": "2021-07-23",
+			"prize": "총 상금: 3,400만원 / 1등 상금: 1,000만원",
+			"activity_kind": "ActivityKindEnum.CONTEST",
+			"category": "[<CategoryEnum.CULTURE_ARTS: '문화/예체능'>]",
+			"is_team": "None",
+			"is_team_evidence": "None",
+			"summary": "제19회 대한민국창작만화공모전은 문화체육관광부와 한국만화영상진흥원이 주최하는 공모전이다. 접수기간은 2021년 7월 16일 10:00부터 7월 23일 17:00까지이며 시상식은 2021년 9월 4일에 진행될 예정이다. 수상 부문은 대상 1명(1,000만원), 최우수상 1명(600만원), 우수상 2명(400만원), 장려상 5명(200만원)으로 총 상금은 3,400만원이다."
+		},
+		"comparison": {
+			"title": "EXACT",
+			"host_organization": "EXACT",
+			"target_participants": "EXACT",
+			"application_start_at": "EXACT",
+			"application_end_at": "EXACT",
+			"prize": "EXACT",
+			"activity_kind": "EXACT",
+			"category": { "EXACT": 1, "ADDED": 0, "OMITTED": 0 },
+			"is_team": "EXACT",
+			"is_team_evidence": "EXACT"
+		}
+	},
+	{
+		"page_id": 5,
+		"elapsed_time": "0:00:36.867087",
+		"response": {
+			"title": "제3회 미래융합인재 발굴 소프트웨어 챌린지",
+			"host_organization": "과학기술정보통신부",
+			"target_participants": "일반인 / 대학생 / 기타",
+			"application_start_at": "2026-09-01",
+			"application_end_at": "2026-10-07",
+			"prize": "다양한 혜택",
+			"activity_kind": "ActivityKindEnum.CONTEST",
+			"category": "[<CategoryEnum.IDEA: '기획/아이디어'>, <CategoryEnum.IT_DEVELOP: 'IT/개발'>, <CategoryEnum.SCIENCE_ENGINEERING: '과학/공학'>]",
+			"is_team": "True",
+			"is_team_evidence": "- [일반부] 소프트웨어 개발에 관심있는 만 19세이상 35세이하 청년으로 구성된 팀(3~5명)",
+			"summary": "과학기술정보통신부가 주최하는 제3회 미래융합인재 발굴 소프트웨어 챌린지입니다. 참가대상은 일반인, 대학생, 기타이며 일반부와 고등부로 나뉘어 팀(3~5명)으로 참여합니다. 접수기간은 2026-09-01부터 2026-10-07까지이며 시상은 다양한 혜택으로 이루어집니다."
+		},
+		"comparison": {
+			"title": "EXACT",
+			"host_organization": "EXACT",
+			"target_participants": "MISS",
+			"application_start_at": "EXACT",
+			"application_end_at": "EXACT",
+			"prize": "MISS",
+			"activity_kind": "EXACT",
+			"category": { "EXACT": 1, "ADDED": 2, "OMITTED": 1 },
+			"is_team": "EXACT",
+			"is_team_evidence": "EXACT"
+		}
+	},
+	{
+		"page_id": 6,
+		"elapsed_time": "0:00:27.845417",
+		"response": {
+			"title": "제1회 소방정책 아이디어 발굴 경진대회",
+			"host_organization": "한국소방단체총연합회",
+			"target_participants": "일반인 / 대학생",
+			"application_start_at": "2026-08-12",
+			"application_end_at": "2026-10-31",
+			"prize": "총 상금: 1,000만원 이하 / 1등 상금: 200만원",
+			"activity_kind": "ActivityKindEnum.COMPETITION",
+			"category": "[<CategoryEnum.IDEA: '기획/아이디어'>]",
+			"is_team": "None",
+			"is_team_evidence": "None",
+			"summary": "제1회 소방정책 아이디어 발굴 경진대회는 미래 소방정책 발전을 위한 창의적 아이디어를 발굴하여 우수한 정책 제안을 소방정책 수립·제도 개선에 반영할 수 있는 기반을 마련하기 위해 개최된다. 공모 주제는 소방정책 관련 모든 분야이며, 응모 자격은 국내 대학(원) 소방 관련학과 재학생 및 교수, 소방 단체 관계자이며 학생·일반 부문 응모가 가능하다. 시상 일정은 2026.12.1로 예정되어 있으며 시상식 장소는 서울 지역으로 본선 참가자들에게 별도 공지되고, 시상내역으로 대상 200만원, 최우수 100만원, 우수 70만원, 장려 50만원이 포함된다."
+		},
+		"comparison": {
+			"title": "EXACT",
+			"host_organization": "EXACT",
+			"target_participants": "MISS",
+			"application_start_at": "EXACT",
+			"application_end_at": "EXACT",
+			"prize": "CLOSE",
+			"activity_kind": "EXACT",
+			"category": { "EXACT": 1, "ADDED": 0, "OMITTED": 0 },
+			"is_team": "EXACT",
+			"is_team_evidence": "EXACT"
+		}
+	},
+	{
+		"page_id": 7,
+		"elapsed_time": "0:00:33.421682",
+		"response": {
+			"title": "2026년 정신건강의 날 기념 정신건강 캐릭터 공모전",
+			"host_organization": "전남광역정신건강복지센터",
+			"target_participants": "전 국민",
+			"application_start_at": "2026-08-20",
+			"application_end_at": "2026-09-17",
+			"prize": "총 상금 1천만원이하 / 1등 상금 100만원",
+			"activity_kind": "ActivityKindEnum.CONTEST",
+			"category": "[<CategoryEnum.DESIGN: '디자인'>, <CategoryEnum.DESIGN: '디자인'>]",
+			"is_team": "None",
+			"is_team_evidence": "None",
+			"summary": "전남광역정신건강복지센터 주최의 2026년 정신건강의 날 기념 캐릭터 공모전이다. 참가자는 1~3개의 캐릭터를 제출할 수 있으며, 기본형(앞, 옆, 뒤)과 응용형 2종 이상으로 구성된 작품 파일을 이미지(JPG, PNG) 또는 수상작(AI, PSD)으로 제출한다. 참가 자격은 전 국민 누구나 가능하며 만 14세 미만은 보호자 동의 필요."
+		},
+		"comparison": {
+			"title": "EXACT",
+			"host_organization": "EXACT",
+			"target_participants": "CLOSE",
+			"application_start_at": "EXACT",
+			"application_end_at": "EXACT",
+			"prize": "CLOSE",
+			"activity_kind": "EXACT",
+			"category": { "EXACT": 2, "ADDED": 0, "OMITTED": 0 },
+			"is_team": "EXACT",
+			"is_team_evidence": "EXACT"
+		}
+	},
+	{
+		"page_id": 8,
+		"elapsed_time": "0:00:17.765301",
+		"response": {
+			"title": "제14회 대한민국 어린이제품 디자인 공모전",
+			"host_organization": "문경시",
+			"target_participants": "제한없음",
+			"application_start_at": "2026-08-27",
+			"application_end_at": "2026-09-09",
+			"prize": "총 상금: 3천만원~1천만원 / 1등 상금: 500만원",
+			"activity_kind": "ActivityKindEnum.CONTEST",
+			"category": "[<CategoryEnum.DESIGN: '디자인'>, <CategoryEnum.PHOTO_CONTENTS: '사진/영상/콘텐츠'>, <CategoryEnum.CULTURE_ARTS: '문화/예체능'>]",
+			"is_team": "None",
+			"is_team_evidence": "None",
+			"summary": "제14회 대한민국 어린이제품 디자인 공모전은 문경시 주최로 개최되며, 디자인/캐릭터/웹툰 분야의 작품을 모집한다. 모집기간은 2026-08-27부터 2026-09-09까지이며, 총 상금은 3천만원에서 1천만원, 1등 상금은 500만원이다."
+		},
+		"comparison": {
+			"title": "EXACT",
+			"host_organization": "EXACT",
+			"target_participants": "EXACT",
+			"application_start_at": "EXACT",
+			"application_end_at": "EXACT",
+			"prize": "MISS",
+			"activity_kind": "EXACT",
+			"category": { "EXACT": 1, "ADDED": 2, "OMITTED": 0 },
+			"is_team": "EXACT",
+			"is_team_evidence": "EXACT"
+		}
+	},
+	{
+		"page_id": 9,
+		"elapsed_time": "0:00:35.757403",
+		"response": {
+			"title": "제17회 현대 주얼리 디자인 공모전",
+			"host_organization": "디자인정책연구원",
+			"target_participants": "응모대상 제한없음",
+			"application_start_at": "2026-11-09",
+			"application_end_at": "2026-11-13",
+			"prize": "총 상금: 1,000만원이하 / 1등 상금: 300만원",
+			"activity_kind": "ActivityKindEnum.CONTEST",
+			"category": "[<CategoryEnum.DESIGN: '디자인'>]",
+			"is_team": "None",
+			"is_team_evidence": "None",
+			"summary": "제17회 현대 주얼리 디자인 공모전이 개최된다. 주최는 디자인정책연구원이며 응모대상은 제한없음, 접수기간은 2026-11-09부터 2026-11-13까지이다. 총 상금은 1,000만원이하이고 1등 상금은 300만원이다."
+		},
+		"comparison": {
+			"title": "EXACT",
+			"host_organization": "EXACT",
+			"target_participants": "CLOSE",
+			"application_start_at": "EXACT",
+			"application_end_at": "EXACT",
+			"prize": "CLOSE",
+			"activity_kind": "EXACT",
+			"category": { "EXACT": 1, "ADDED": 0, "OMITTED": 0 },
+			"is_team": "EXACT",
+			"is_team_evidence": "EXACT"
+		}
+	},
+	{
+		"page_id": 10,
+		"elapsed_time": "0:00:33.379055",
+		"response": {
+			"title": "합병 법무법인 명칭 공모",
+			"host_organization": "법무법인 대륙아주·린",
+			"target_participants": "누구나 , 유치원 , 초등학생 , 중학생 , 고등학생 , 대학생 , 대학원생 , 일반인 , 외국인",
+			"application_start_at": "2026-09-07",
+			"application_end_at": "2026-09-10",
+			"prize": "상금(총상금 : 1,000만원 / 1위 : 500만원)",
+			"activity_kind": "ActivityKindEnum.CONTEST",
+			"category": "[<CategoryEnum.IDEA: '기획/아이디어'>, <CategoryEnum.MARKETING: '홍보/마케팅'>, <CategoryEnum.CULTURE_ARTS: '문화/예체능'>]",
+			"is_team": "None",
+			"is_team_evidence": "None",
+			"summary": "합병 법무법인 명칭 공모는 법무법인 대륙아주·린이 주관하는 명칭 공모전이다. 누구나 응모 가능하며 총상금은 1,000만원이고 대상은 500만원이다. 접수기간은 2026-09-07부터 2026-09-10까지이며 결과 발표는 2026-09-15이다."
+		},
+		"comparison": {
+			"title": "EXACT",
+			"host_organization": "EXACT",
+			"target_participants": "MISS",
+			"application_start_at": "EXACT",
+			"application_end_at": "EXACT",
+			"prize": "MISS",
+			"activity_kind": "EXACT",
+			"category": { "EXACT": 1, "ADDED": 2, "OMITTED": 0 },
+			"is_team": "EXACT",
+			"is_team_evidence": "EXACT"
+		}
+	},
+	{
+		"page_id": 11,
+		"elapsed_time": "0:00:25.846871",
+		"response": {
+			"title": "여성경제활동 지원센터 새일센터 새이름 공모전",
+			"host_organization": "중앙여성경제활동지원센터",
+			"target_participants": "누구나 참여 가능",
+			"application_start_at": "2026-09-01",
+			"application_end_at": "2026-09-18",
+			"prize": "총 상금: 1,040만원 / 1등 상금: 25만원",
+			"activity_kind": "ActivityKindEnum.CONTEST",
+			"category": "[<CategoryEnum.DESIGN: '디자인'>]",
+			"is_team": "None",
+			"is_team_evidence": "None",
+			"summary": "중앙여성경제활동지원센터의 새 이름을 제안하는 공모전으로 누구나 참여 가능하다. 접수기간은 2026.09.01~2026.09.18까지이며, 정책 부합성, 창의성, 친근함 등을 종합 평가한다. 총상금 1,040만원과 1등 상금 25만원의 시상이 있다."
+		},
+		"comparison": {
+			"title": "CLOSE",
+			"host_organization": "EXACT",
+			"target_participants": "EXACT",
+			"application_start_at": "EXACT",
+			"application_end_at": "EXACT",
+			"prize": "CLOSE",
+			"activity_kind": "EXACT",
+			"category": { "EXACT": 0, "ADDED": 1, "OMITTED": 1 },
+			"is_team": "EXACT",
+			"is_team_evidence": "EXACT"
+		}
+	},
+	{
+		"page_id": 12,
+		"elapsed_time": "0:00:35.383252",
+		"response": {
+			"title": "파주 상생경제 플랫폼 명칭 공모전 '일상이 될 플랫폼, 내 이름은?'",
+			"host_organization": "파주시",
+			"target_participants": "대한민국 국민 누구나(연령, 지역 무관)",
+			"application_start_at": "2026-09-01",
+			"application_end_at": "2026-09-07",
+			"prize": "총상금: 150만원 / 1등 상금: 50만원",
+			"activity_kind": "ActivityKindEnum.CONTEST",
+			"category": "[<CategoryEnum.IDEA: '기획/아이디어'>]",
+			"is_team": "False",
+			"is_team_evidence": "1인 1작품만 응모 가능",
+			"summary": "파주 상생경제 플랫폼 명칭 공모전은 파주시가 주관하는 네이밍 공모전으로, 국민 누구나 온라인으로 응모할 수 있다. 총상금 150만원에 1등은 50만원이 수여되며, 1인 1작품 응모 원칙이 적용된다. 세부 요강은 주최사의 공고를 반드시 확인해야 한다."
+		},
+		"comparison": {
+			"title": "EXACT",
+			"host_organization": "EXACT",
+			"target_participants": "EXACT",
+			"application_start_at": "EXACT",
+			"application_end_at": "EXACT",
+			"prize": "CLOSE",
+			"activity_kind": "EXACT",
+			"category": { "EXACT": 1, "ADDED": 0, "OMITTED": 0 },
+			"is_team": "EXACT",
+			"is_team_evidence": "CLOSE"
+		}
+	},
+	{
+		"page_id": 13,
+		"elapsed_time": "0:00:27.930558",
+		"response": {
+			"title": "2026년 Web3 시대의 블록체인 AI 융합 해커톤",
+			"host_organization": "충남대학교 COSS사업단",
+			"target_participants": "대학생",
+			"application_start_at": "2026-08-14",
+			"application_end_at": "2026-09-14",
+			"prize": "총 상금: 800만원 / 1등 상금: 300만원",
+			"activity_kind": "ActivityKindEnum.HACKATHON",
+			"category": "[<CategoryEnum.SCIENCE_ENGINEERING: '과학/공학'>, <CategoryEnum.IDEA: '기획/아이디어'>]",
+			"is_team": "True",
+			"is_team_evidence": "팀당 2~4인으로 구성하여 참가",
+			"summary": "Web3 시대의 블록체인 AI 융합 해커톤은 블록체인 기술과 AI, 데이터 마켓플레이스, 사회문제 해결 및 산업·비즈니스 혁신 등을 융합하여 실제 구동 가능한 프로토타입을 구현하는 해커톤이다. 참가팀은 아이디어를 바탕으로 전문가 멘토링을 거쳐 프로젝트를 구체화하고, 본선에서 솔루션·프로토콜·dAPP 등 구현 결과물을 발표·시연한다. 시상은 총 800만원으로 대상 1팀 300만원, 최우수상 1팀 200만원, 우수상 2팀 각 150만원이며, 참가 자격은 국내 대학교 학부 재학생 및 휴학생이고 팀당 2~4인으로 구성하여 참가한다."
+		},
+		"comparison": {
+			"title": "CLOSE",
+			"host_organization": "EXACT",
+			"target_participants": "MISS",
+			"application_start_at": "MISS",
+			"application_end_at": "EXACT",
+			"prize": "EXACT",
+			"activity_kind": "EXACT",
+			"category": { "EXACT": 0, "ADDED": 2, "OMITTED": 2 },
+			"is_team": "EXACT",
+			"is_team_evidence": "CLOSE"
+		}
+	},
+	{
+		"page_id": 14,
+		"elapsed_time": "0:00:43.444722",
+		"response": {
+			"title": "2026 아이가 행복입니다 부산「31초 우리가족 행복담기 영상제",
+			"host_organization": "부산광역시 / 조선일보",
+			"target_participants": "부산의 가족",
+			"application_start_at": "2026-08-30",
+			"application_end_at": "2026-10-09",
+			"prize": "상장 수여",
+			"activity_kind": "ActivityKindEnum.CONTEST",
+			"category": "[<CategoryEnum.PHOTO_CONTENTS: '사진/영상/콘텐츠'>]",
+			"is_team": "None",
+			"is_team_evidence": "None",
+			"summary": "부산광역시와 조선일보가 주최하는 가족 영상 공모전으로, 31초 길이의 영상 또는 사진으로 가족의 행복을 담아 제출한다. 접수는 2026-08-30에 시작해 2026-10-09에 마감되며 부산지역 본선 심사는 2026-10-13에 진행된다. 행사 일정은 2026-10-30(금)~10-31(토)로, 영화의전당 하늘연극장 및 야외광장에서 열린다."
+		},
+		"comparison": {
+			"title": "EXACT",
+			"host_organization": "CLOSE",
+			"target_participants": "EXACT",
+			"application_start_at": "EXACT",
+			"application_end_at": "EXACT",
+			"prize": "EXACT",
+			"activity_kind": "EXACT",
+			"category": { "EXACT": 1, "ADDED": 0, "OMITTED": 0 },
+			"is_team": "EXACT",
+			"is_team_evidence": "EXACT"
+		}
+	},
+	{
+		"page_id": 15,
+		"elapsed_time": "0:00:35.505549",
+		"response": {
+			"title": "2026 AI·SW중심대학 디지털 경진대회 SW부문",
+			"host_organization": "정보통신기획평가원 / AI·SW중심대학협의회",
+			"target_participants": "AI·SW중심대학 학생(57개교) / 재학생 및 휴학생 가능(전공무관) / 졸업생 불가",
+			"application_start_at": "2026-05-26",
+			"application_end_at": "2026-06-08",
+			"prize": "총 상금: 1,220만원",
+			"activity_kind": "ActivityKindEnum.COMPETITION",
+			"category": "[<CategoryEnum.AI_DATA: 'AI/데이터'>, <CategoryEnum.IT_DEVELOP: 'IT/개발'>]",
+			"is_team": "True",
+			"is_team_evidence": "▼ 본 경진대회는 팀 단위로 참가접수를 진행하기에 팀 병합 절차가 별도로 없습니다.",
+			"summary": "주제는 라이프스타일 혁신을 위한 AI Agent 기반 SW 개발이다. 참가 대상은 AI·SW중심대학 학생으로 재학생 및 휴학생 가능(전공무관), 졸업생은 참가 불가이며 팀 단위로 접수한다."
+		},
+		"comparison": {
+			"title": "CLOSE",
+			"host_organization": "CLOSE",
+			"target_participants": "CLOSE",
+			"application_start_at": "EXACT",
+			"application_end_at": "EXACT",
+			"prize": "EXACT",
+			"activity_kind": "EXACT",
+			"category": { "EXACT": 1, "ADDED": 1, "OMITTED": 0 },
+			"is_team": "EXACT",
+			"is_team_evidence": "EXACT"
+		}
+	},
+	{
+		"page_id": 16,
+		"elapsed_time": "0:00:26.596174",
+		"response": {
+			"title": "2024년 충청남도 청년정책 서포터즈 공개모집",
+			"host_organization": "재단법인 충남창조경제혁신센터",
+			"target_participants": "충청남도에 주민등록이 되어있는 청년 / 충청남도 소재의 대학에 재학 중인 청년 / 충청남도 소재의 기업에 근무하는 청년",
+			"application_start_at": "2024-04-09",
+			"application_end_at": "2024-04-22",
+			"prize": "총 상금: 1000만원 이하",
+			"activity_kind": "ActivityKindEnum.SUPPORTERS",
+			"category": "[<CategoryEnum.MARKETING: '홍보/마케팅'>]",
+			"is_team": "None",
+			"is_team_evidence": "None",
+			"summary": "충청남도청년센터에서 2024년 충청남도 청년정책 서포터즈 공개모집을 진행한다. 모집 대상은 충청남도에 주민등록이 되어있는 청년, 충청남도 소재 대학 재학생, 충청남도 소재 기업에 근무하는 청년이며 모집 인원은 총 15명 내외이다. 활동 내용은 충청남도 청년정책 홍보 및 청년정책 대회 참가이며, 보상으로 인당 월 100,000원 내외의 활동비와 장소 지원 등이 제공된다."
+		},
+		"comparison": {
+			"title": "EXACT",
+			"host_organization": "EXACT",
+			"target_participants": "EXACT",
+			"application_start_at": "EXACT",
+			"application_end_at": "EXACT",
+			"prize": "CLOSE",
+			"activity_kind": "EXACT",
+			"category": { "EXACT": 1, "ADDED": 0, "OMITTED": 0 },
+			"is_team": "EXACT",
+			"is_team_evidence": "EXACT"
+		}
+	},
+	{
+		"page_id": 17,
+		"elapsed_time": "0:00:35.604912",
+		"response": {
+			"title": "2025 금융권 공동채용 박람회",
+			"host_organization": "은행연합회, 금융투자협회, 생명보험협회, 손해보험협회, 여신금융협회, 저",
+			"target_participants": "서울에서 활동이 가능한 대학생",
+			"application_start_at": "2025-03-17",
+			"application_end_at": "2025-03-26",
+			"prize": "소정의 개인 활동비 제공",
+			"activity_kind": "ActivityKindEnum.SUPPORTERS",
+			"category": "[<CategoryEnum.MARKETING: '홍보/마케팅'>, <CategoryEnum.PHOTO_CONTENTS: '사진/영상/콘텐츠'>, <CategoryEnum.IDEA: '기획/아이디어'>]",
+			"is_team": "None",
+			"is_team_evidence": "None",
+			"summary": "2025 금융권 공동채용 박람회 대학생 서포터즈를 서울에서 활동 가능한 대학생을 대상으로 모집한다. 접수기간은 2025년 3월 17일(월) ~ 3월 26일(수)이고 활동기간은 2025년 4월 ~ 9월(약 5개월)이다. 주관은 은행연합회, 금융투자협회, 생명보험협회, 손해보험협회, 여신금융협회이며 금융위원회, 금융감독원이 후원하고, 발대식·아이디어 회의, 카드뉴스·숏폼 콘텐츠 제작, SNS 후기 업로드 등 박람회 관련 활동을 수행한다. 활동 혜택으로 소정의 개인 활동비 제공, 1:1 맞춤형 취업 컨설팅 프로그램 지원, 금공채 박람회 공식 수료증 발급 등이 있다."
+		},
+		"comparison": {
+			"title": "CLOSE",
+			"host_organization": "EXACT",
+			"target_participants": "EXACT",
+			"application_start_at": "EXACT",
+			"application_end_at": "EXACT",
+			"prize": "EXACT",
+			"activity_kind": "EXACT",
+			"category": { "EXACT": 2, "ADDED": 1, "OMITTED": 0 },
+			"is_team": "EXACT",
+			"is_team_evidence": "EXACT"
+		}
+	},
+	{
+		"page_id": 18,
+		"elapsed_time": "0:00:37.353033",
+		"response": {
+			"title": "2025년 하반기 틱톡 공식 대학생 서포터즈 모집",
+			"host_organization": "(주)케미캐스트",
+			"target_participants": "전국 대학생",
+			"application_start_at": "2025-11-05",
+			"application_end_at": "2025-11-30",
+			"prize": "서포터즈 활동비(방송지원금) 지원",
+			"activity_kind": "ActivityKindEnum.SUPPORTERS",
+			"category": "[<CategoryEnum.PHOTO_CONTENTS: '사진/영상/콘텐츠'>, <CategoryEnum.IDEA: '기획/아이디어'>, <CategoryEnum.MARKETING: '홍보/마케팅'>]",
+			"is_team": "True",
+			"is_team_evidence": "(개인, 팀, 기존동아리 모두 지원 가능)",
+			"summary": "2025년 하반기에 TikTok의 대학생 서포터즈를 모집합니다. 전국 대학생 누구나 지원 가능하며 모집 기간은 2025년 11월 30일(일)까지이고 활동 기간은 2025년 12월 중순~ 2026년 12월입니다. 주요 활동은 TikTok LIVE 크리에이터 활동으로 캠퍼스 라이브 방송 콘텐츠 제작과 매니저 역할이 있으며, 혜택으로 활동비 지원, 인턴 면접 기회, 수료증 발급 및 공식 굿즈 제공 등이 있습니다."
+		},
+		"comparison": {
+			"title": "CLOSE",
+			"host_organization": "MISS",
+			"target_participants": "EXACT",
+			"application_start_at": "EXACT",
+			"application_end_at": "EXACT",
+			"prize": "EXACT",
+			"activity_kind": "EXACT",
+			"category": { "EXACT": 2, "ADDED": 1, "OMITTED": 0 },
+			"is_team": "EXACT",
+			"is_team_evidence": "CLOSE"
+		}
+	},
+	{
+		"page_id": 19,
+		"elapsed_time": "0:00:06.867801",
+		"response": {
+			"title": "None",
+			"host_organization": "None",
+			"target_participants": "None",
+			"application_start_at": "None",
+			"application_end_at": "None",
+			"prize": "None",
+			"activity_kind": "None",
+			"category": "[]",
+			"is_team": "None",
+			"is_team_evidence": "None",
+			"summary": "None"
+		},
+		"comparison": {
+			"title": "EXACT",
+			"host_organization": "EXACT",
+			"target_participants": "EXACT",
+			"application_start_at": "EXACT",
+			"application_end_at": "EXACT",
+			"prize": "EXACT",
+			"activity_kind": "EXACT",
+			"category": { "EXACT": 0, "ADDED": 0, "OMITTED": 0 },
+			"is_team": "EXACT",
+			"is_team_evidence": "EXACT"
+		}
+	},
+	{
+		"page_id": 20,
+		"elapsed_time": "0:00:37.403081",
+		"response": {
+			"title": "제41회 제일기획 아이디어 페스티벌",
+			"host_organization": "제일기획",
+			"target_participants": "국내외 2년제 이상 대학(원) 재학 중인 학생 / 휴학 중인 학생 / 군 복무자 / 졸업유예자",
+			"application_start_at": "2020-04-21",
+			"application_end_at": "2020-04-28",
+			"prize": "해외 광고제 교육 프로그램 참가",
+			"activity_kind": "ActivityKindEnum.CONTEST",
+			"category": "[<CategoryEnum.IDEA: '기획/아이디어'>, <CategoryEnum.MARKETING: '홍보/마케팅'>, <CategoryEnum.DESIGN: '디자인'>]",
+			"is_team": "True",
+			"is_team_evidence": "개인 또는 팀(4명까지) 으로 참여할 수 있습니다.",
+			"summary": "제41회 제일기획 아이디어 페스티벌은 제일기획이 주최하는 공모전으로 아이디어/마케팅, 광고/디자인/웹툰 분야의 출품작을 온라인으로 접수받는다. 접수 기간은 2020년 4월 21일 ~ 4월 28일이며, 개인 또는 최대 4명으로 팀 출품이 가능하다. 시상 내역은 대상, 금상, 은상, 동상 등으로 구성되며 수상자 특전에 해외 광고제 교육 프로그램 참가 등 다양한 혜택이 있다."
+		},
+		"comparison": {
+			"title": "EXACT",
+			"host_organization": "EXACT",
+			"target_participants": "CLOSE",
+			"application_start_at": "EXACT",
+			"application_end_at": "EXACT",
+			"prize": "MISS",
+			"activity_kind": "EXACT",
+			"category": { "EXACT": 2, "ADDED": 1, "OMITTED": 0 },
+			"is_team": "EXACT",
+			"is_team_evidence": "EXACT"
+		}
+	},
+	{
+		"page_id": 21,
+		"elapsed_time": "0:00:40.129235",
+		"response": {
+			"title": "숏폼 콘텐츠 머니타이제이션 공모전 2022",
+			"host_organization": "(주)더에스엠씨그룹",
+			"target_participants": "국내외 재학/휴학 중인 대학생 및 대학원생",
+			"application_start_at": "2022-10-04",
+			"application_end_at": "2022-11-11",
+			"prize": "총 상금: 1,260만원",
+			"activity_kind": "ActivityKindEnum.CONTEST",
+			"category": "[<CategoryEnum.PHOTO_CONTENTS: '사진/영상/콘텐츠'>]",
+			"is_team": "True",
+			"is_team_evidence": "1인 혹은 2인으로 참여 가능합니다.",
+			"summary": "숏폼 콘텐츠 머니타이제이션 공모전은 주최가 (주)더에스엠씨그룹이며, 접수기간은 2022-10-04 ~ 2022-11-11입니다. 응모자는 국내외 재학/휴학 중인 대학생 및 대학원생으로 1인 또는 2인으로 참여할 수 있습니다. 총 1,260만원의 상금이 수여되며 대상 150만원, 최우수상 100만원, 우수상 50만원, 입상 30만원으로 구성되고, 시상은 브랜드별 부문으로 나누어 진행되며 본선에서 TOP 2의 PT 심사와 TOP 4의 서류 통과 인증서를 발급할 예정입니다."
+		},
+		"comparison": {
+			"title": "CLOSE",
+			"host_organization": "EXACT",
+			"target_participants": "EXACT",
+			"application_start_at": "EXACT",
+			"application_end_at": "EXACT",
+			"prize": "CLOSE",
+			"activity_kind": "EXACT",
+			"category": { "EXACT": 1, "ADDED": 0, "OMITTED": 0 },
+			"is_team": "EXACT",
+			"is_team_evidence": "CLOSE"
+		}
+	},
+	{
+		"page_id": 22,
+		"elapsed_time": "0:00:25.193550",
+		"response": {
+			"title": "2026 ASYAAF SNS 서포터즈 2차 모집",
+			"host_organization": "조선일보 / 조선일보 문화사업단",
+			"target_participants": "전시와 문화예술에 남다른 애정을 가지신 분 / 블로그, 인스타그램 등 개인 SNS를 활발히 운영하시는 분 / 릴스, 숏폼, 블로그 등 감각적인 콘텐츠로 현장의 생생함을 전할 수 있는 분",
+			"application_start_at": "2026-07-07",
+			"application_end_at": "2026-07-16",
+			"prize": "전시 초대권 5매 증정",
+			"activity_kind": "ActivityKindEnum.SUPPORTERS",
+			"category": "[<CategoryEnum.CULTURE_ARTS: '문화/예체능'>, <CategoryEnum.PHOTO_CONTENTS: '사진/영상/콘텐츠'>, <CategoryEnum.MARKETING: '홍보/마케팅'>]",
+			"is_team": "None",
+			"is_team_evidence": "None",
+			"summary": "국내 최대 규모의 아시아 청년 작가 미술 축제인 ASYAAF의 SNS 서포터즈를 모집한다. 전시 관람 후 SNS 콘텐츠를 업로드하고, 서포터즈 혜택으로 전시 초대권 5매가 제공된다. 모집 기간은 2026년 7월 7일부터 7월 16일까지이며, 우수 활동자 콘텐츠는 ASYAAF 공식 SNS에 게시되는 특별한 기회로 이어진다."
+		},
+		"comparison": {
+			"title": "EXACT",
+			"host_organization": "CLOSE",
+			"target_participants": "EXACT",
+			"application_start_at": "EXACT",
+			"application_end_at": "EXACT",
+			"prize": "EXACT",
+			"activity_kind": "EXACT",
+			"category": { "EXACT": 1, "ADDED": 2, "OMITTED": 0 },
+			"is_team": "EXACT",
+			"is_team_evidence": "EXACT"
+		}
+	},
+	{
+		"page_id": 23,
+		"elapsed_time": "0:00:28.266576",
+		"response": {
+			"title": "2026 코드게이트 AI 스타트업 해커톤",
+			"host_organization": "None",
+			"target_participants": "참가팀",
+			"application_start_at": "None",
+			"application_end_at": "2026-07-08",
+			"prize": "총 상금: 2,500만원",
+			"activity_kind": "ActivityKindEnum.HACKATHON",
+			"category": "[<CategoryEnum.AI_DATA: 'AI/데이터'>, <CategoryEnum.IT_DEVELOP: 'IT/개발'>]",
+			"is_team": "True",
+			"is_team_evidence": "참가팀 모집",
+			"summary": "AI를 활용한 스타트업 해커톤으로 참가팀을 모집한다. 총 상금은 2,500만원이며 실전에서 AI 기반 서비스를 개발하고 MVP를 검증한다. 일정은 2026년 7월 21일~23일에 서울 강남구 영동대로96길 20 스페이스쉐어 삼성역센터에서 열리며, 신청 마감은 2026년 7월 8일이다."
+		},
+		"comparison": {
+			"title": "CLOSE",
+			"host_organization": "EXACT",
+			"target_participants": "MISS",
+			"application_start_at": "EXACT",
+			"application_end_at": "EXACT",
+			"prize": "EXACT",
+			"activity_kind": "EXACT",
+			"category": { "EXACT": 2, "ADDED": 0, "OMITTED": 0 },
+			"is_team": "EXACT",
+			"is_team_evidence": "CLOSE"
+		}
+	},
+	{
+		"page_id": 24,
+		"elapsed_time": "0:00:37.252002",
+		"response": {
+			"title": "2026 메이플스토리 글로벌 개발 콘테스트",
+			"host_organization": "넥슨",
+			"target_participants": "대학생 / 일반인",
+			"application_start_at": "None",
+			"application_end_at": "2026-05-11",
+			"prize": "None",
+			"activity_kind": "ActivityKindEnum.HACKATHON",
+			"category": "[<CategoryEnum.IT_DEVELOP: 'IT/개발'>]",
+			"is_team": "True",
+			"is_team_evidence": "신청 가능한 최대 그룹수는 1 개 입니다.",
+			"summary": "넥슨이 주최하는 메이플스토리 글로벌 개발 콘테스트로, 외부접수 이벤트이다. 게임 창작자들을 위한 패스트 트랙 해커톤 형식으로 진행되며 신청 마감은 2026-05-11 23:59까지이고 이벤트 기간은 2026-07-03 20:00부터 2026-07-05 20:59까지이다. 장소는 넥슨코리아이며 신청 그룹수는 최대 1개이다."
+		},
+		"comparison": {
+			"title": "MISS",
+			"host_organization": "MISS",
+			"target_participants": "MISS",
+			"application_start_at": "EXACT",
+			"application_end_at": "EXACT",
+			"prize": "EXACT",
+			"activity_kind": "EXACT",
+			"category": { "EXACT": 1, "ADDED": 0, "OMITTED": 0 },
+			"is_team": "MISS",
+			"is_team_evidence": "MISS"
+		}
+	},
+	{
+		"page_id": 25,
+		"elapsed_time": "0:00:27.798069",
+		"response": {
+			"title": "서울디자인런 2026 - 창업은 언제 혼자를 벗어나야 할까? 세미나 참여자 모집",
+			"host_organization": "None",
+			"target_participants": "None",
+			"application_start_at": "None",
+			"application_end_at": "None",
+			"prize": "None",
+			"activity_kind": "ActivityKindEnum.COMPETITION",
+			"category": "[<CategoryEnum.DESIGN: '디자인'>]",
+			"is_team": "None",
+			"is_team_evidence": "신청 가능한 최대 그룹수는 1 개 입니다.",
+			"summary": "서울디자인런 2026의 세미나 참여자 모집 공고로, 디자인과 창업에 관한 주제를 다루는 세미나가 무료로 진행된다. 행사일시는 2026-09-10 15:00~17:00이며, 신청 가능 인원은 4명이다."
+		},
+		"comparison": {
+			"title": "MISS",
+			"host_organization": "EXACT",
+			"target_participants": "EXACT",
+			"application_start_at": "EXACT",
+			"application_end_at": "MISS",
+			"prize": "EXACT",
+			"activity_kind": "MISS",
+			"category": { "EXACT": 0, "ADDED": 1, "OMITTED": 1 },
+			"is_team": "EXACT",
+			"is_team_evidence": "MISS"
+		}
+	},
+	{
+		"page_id": 26,
+		"elapsed_time": "0:00:23.775404",
+		"response": {
+			"title": "2026 코드게이트 AI 스타트업 해커톤",
+			"host_organization": "한컴이노스트림",
+			"target_participants": "참가팀",
+			"application_start_at": "2026-05-20",
+			"application_end_at": "2026-07-08",
+			"prize": "총 상금: 2,500만원",
+			"activity_kind": "ActivityKindEnum.HACKATHON",
+			"category": "[<CategoryEnum.IT_DEVELOP: 'IT/개발'>, <CategoryEnum.AI_DATA: 'AI/데이터'>]",
+			"is_team": "True",
+			"is_team_evidence": "참가팀 모집",
+			"summary": "한컴이노스트림 주최의 2026 코드게이트 AI 스타트업 해커톤은 AI 활용으로 현실 문제를 해결하고 새로운 사용자 경험과 서비스를 기획‧구현할 참가팀을 모집합니다. 총 상금은 2,500만원이며 신청기간은 2026-05-20부터 2026-07-08까지이고 참가비는 무료입니다. IT/개발 및 AI 데이터 분야의 해커톤으로 진행될 예정입니다."
+		},
+		"comparison": {
+			"title": "CLOSE",
+			"host_organization": "EXACT",
+			"target_participants": "MISS",
+			"application_start_at": "EXACT",
+			"application_end_at": "EXACT",
+			"prize": "EXACT",
+			"activity_kind": "EXACT",
+			"category": { "EXACT": 2, "ADDED": 0, "OMITTED": 0 },
+			"is_team": "EXACT",
+			"is_team_evidence": "CLOSE"
+		}
+	},
+	{
+		"page_id": 27,
+		"elapsed_time": "0:00:32.927111",
+		"response": {
+			"title": "도내 가상융합분야(메타버스, XR, AI) 예비·전문 기획/개발자 양성 및 콘텐츠 개발을 위한 경진대회",
+			"host_organization": "None",
+			"target_participants": "도내 가상융합분야 예비·전문 기획/개발자",
+			"application_start_at": "None",
+			"application_end_at": "None",
+			"prize": "None",
+			"activity_kind": "ActivityKindEnum.COMPETITION",
+			"category": "[<CategoryEnum.IT_DEVELOP: 'IT/개발'>, <CategoryEnum.IDEA: '기획/아이디어'>, <CategoryEnum.PHOTO_CONTENTS: '사진/영상/콘텐츠'>]",
+			"is_team": "None",
+			"is_team_evidence": "None",
+			"summary": "도내 가상융합분야 예비·전문 기획/개발자 양성을 위한 경진대회로, 메타버스/XR/AI 기반 콘텐츠 개발을 목표로 한다. 신청 기간은 7월 17일 00:00부터 7월 31일 23:59까지이며 장소는 경기 성남시 수정구 대왕판교로 815 판교제2테크노밸리기업지원허브이다."
+		},
+		"comparison": {
+			"title": "MISS",
+			"host_organization": "MISS",
+			"target_participants": "MISS",
+			"application_start_at": "MISS",
+			"application_end_at": "MISS",
+			"prize": "EXACT",
+			"activity_kind": "EXACT",
+			"category": { "EXACT": 1, "ADDED": 2, "OMITTED": 0 },
+			"is_team": "MISS",
+			"is_team_evidence": "MISS"
+		}
+	},
+	{
+		"page_id": 28,
+		"elapsed_time": "0:00:27.009731",
+		"response": {
+			"title": "XRPL HACKATHON SEOUL 2025",
+			"host_organization": "XRPL Korea",
+			"target_participants": "None",
+			"application_start_at": "2025-08-20",
+			"application_end_at": "2025-09-20",
+			"prize": "None",
+			"activity_kind": "ActivityKindEnum.HACKATHON",
+			"category": "[<CategoryEnum.IT_DEVELOP: 'IT/개발'>]",
+			"is_team": "None",
+			"is_team_evidence": "None",
+			"summary": "XRPL HACKATHON SEOUL 2025는 XRPL Korea가 주최하는 해커톤이다. 행사 장소는 서울 서초구 강남대로 311 드림플러스 강남이며, 참가비는 무료다. 신청 기간은 2025-08-20 00:00부터 2025-09-20 09:30까지이고, 행사는 2025년 9월 20일(토) 10:00부터 9월 21일(일) 16:00까지 진행된다."
+		},
+		"comparison": {
+			"title": "EXACT",
+			"host_organization": "EXACT",
+			"target_participants": "EXACT",
+			"application_start_at": "EXACT",
+			"application_end_at": "EXACT",
+			"prize": "EXACT",
+			"activity_kind": "EXACT",
+			"category": { "EXACT": 1, "ADDED": 0, "OMITTED": 0 },
+			"is_team": "EXACT",
+			"is_team_evidence": "EXACT"
+		}
+	},
+	{
+		"page_id": 29,
+		"elapsed_time": "0:00:34.035399",
+		"response": {
+			"title": "참가만해도 상금을 주는 블록체인 해커하우스 / 해커톤 🔥🎁",
+			"host_organization": "ICP Korea",
+			"target_participants": "None",
+			"application_start_at": "None",
+			"application_end_at": "None",
+			"prize": "무료",
+			"activity_kind": "ActivityKindEnum.HACKATHON",
+			"category": "[<CategoryEnum.IT_DEVELOP: 'IT/개발'>, <CategoryEnum.SCIENCE_ENGINEERING: '과학/공학'>]",
+			"is_team": "None",
+			"is_team_evidence": "None",
+			"summary": "ICP Korea 주최의 블록체인 해커하우스/해커톤으로 개최되며, 장소는 서울 강남구 언주로148길 5의 SJ쿤스트할레이다. 참가비는 무료이며, 신청 기간은 명시되어 있지 않다. 행사 일정은 3월 26일~27일로 안내되어 있다."
+		},
+		"comparison": {
+			"title": "CLOSE",
+			"host_organization": "EXACT",
+			"target_participants": "EXACT",
+			"application_start_at": "EXACT",
+			"application_end_at": "EXACT",
+			"prize": "MISS",
+			"activity_kind": "EXACT",
+			"category": { "EXACT": 1, "ADDED": 1, "OMITTED": 0 },
+			"is_team": "EXACT",
+			"is_team_evidence": "EXACT"
+		}
+	},
+	{
+		"page_id": 30,
+		"elapsed_time": "0:00:41.137003",
+		"response": {
+			"title": "Titanic - Machine Learning from Disaster",
+			"host_organization": "Kaggle",
+			"target_participants": "people who have little to no machine learning background",
+			"application_start_at": "None",
+			"application_end_at": "None",
+			"prize": "Kaggle Notebooks is our no-setup, customizable, Jupyter Notebooks environment with free GPUs",
+			"activity_kind": "ActivityKindEnum.COMPETITION",
+			"category": "[<CategoryEnum.AI_DATA: 'AI/데이터'>, <CategoryEnum.IT_DEVELOP: 'IT/개발'>]",
+			"is_team": "True",
+			"is_team_evidence": "When you accept the competition rules, a team will be created for you.",
+			"summary": "Titanic - Machine Learning from Disaster is a Getting Started Prediction Competition on Kaggle. The competition runs indefinitely with a rolling leaderboard, and participants download data, build models, and submit predictions to see their ranking. Kaggle Notebooks is our no-setup, customizable, Jupyter Notebooks environment with free GPUs."
+		},
+		"comparison": {
+			"title": "EXACT",
+			"host_organization": "EXACT",
+			"target_participants": "MISS",
+			"application_start_at": "EXACT",
+			"application_end_at": "EXACT",
+			"prize": "MISS",
+			"activity_kind": "MISS",
+			"category": { "EXACT": 2, "ADDED": 0, "OMITTED": 0 },
+			"is_team": "MISS",
+			"is_team_evidence": "MISS"
+		}
+	},
+	{
+		"page_id": 31,
+		"elapsed_time": "0:00:38.191326",
+		"response": {
+			"title": "Spaceship Titanic 공모전",
+			"host_organization": "Kaggle",
+			"target_participants": "머신러닝 기초 지식이 없는 사람들",
+			"application_start_at": "None",
+			"application_end_at": "None",
+			"prize": "학습 기회 및 커뮤니티 네트워킹",
+			"activity_kind": "ActivityKindEnum.CONTEST",
+			"category": "[<CategoryEnum.AI_DATA: 'AI/데이터'>]",
+			"is_team": "True",
+			"is_team_evidence": "When you accept the competition rules, a team will be created for you.",
+			"summary": "Spaceship Titanic은 Kaggle의 Getting Started 공모전으로, 승객이 이상 현상으로 운송되었는지 예측하는 문제를 다룬다. 무제한 진행형으로 롤링 리더보드가 있으며, 초보자도 참가할 수 있고 머신러닝의 기초를 학습하고 커뮤니티를 만나는 기회가 제공된다. 평가 지표는 분류 정확도이며, 팀 구성은 가능하다."
+		},
+		"comparison": {
+			"title": "CLOSE",
+			"host_organization": "EXACT",
+			"target_participants": "MISS",
+			"application_start_at": "EXACT",
+			"application_end_at": "EXACT",
+			"prize": "MISS",
+			"activity_kind": "MISS",
+			"category": { "EXACT": 1, "ADDED": 0, "OMITTED": 1 },
+			"is_team": "MISS",
+			"is_team_evidence": "MISS"
+		}
+	},
+	{
+		"page_id": 33,
+		"elapsed_time": "0:00:18.840311",
+		"response": {
+			"title": "제14회 대한민국 어린이제품 디자인 공모전",
+			"host_organization": "(사)디자인정책연구원",
+			"target_participants": "None",
+			"application_start_at": "None",
+			"application_end_at": "None",
+			"prize": "None",
+			"activity_kind": "ActivityKindEnum.CONTEST",
+			"category": "[]",
+			"is_team": "None",
+			"is_team_evidence": "None",
+			"summary": "제14회 대한민국 어린이제품 디자인 공모전에 대한 안내 페이지이다. 주최기관은 (사)디자인정책연구원이며 공식 홈페이지와 정보 페이지가 제공된다."
+		},
+		"comparison": {
+			"title": "CLOSE",
+			"host_organization": "EXACT",
+			"target_participants": "EXACT",
+			"application_start_at": "EXACT",
+			"application_end_at": "EXACT",
+			"prize": "EXACT",
+			"activity_kind": "EXACT",
+			"category": { "EXACT": 0, "ADDED": 0, "OMITTED": 1 },
+			"is_team": "EXACT",
+			"is_team_evidence": "EXACT"
+		}
+	},
+	{
+		"page_id": 34,
+		"elapsed_time": "0:00:39.917563",
+		"response": {
+			"title": "2019년 개방형클라우드플랫폼 파스-타 기반 서비스 개발 및 아이디어 공모전",
+			"host_organization": "과학기술정보통신부, 국회도서관",
+			"target_participants": "학생, 개인, 기업 개발자(5인 이내 팀)",
+			"application_start_at": "2019-09-23",
+			"application_end_at": "2019-12-08",
+			"prize": "대상 500만원, 금상 400만원, 은상 300만원, 동상 250만원, 특별상 200만원, 아이디어 최우수상 150만원, 우수상 100만원",
+			"activity_kind": "ActivityKindEnum.CONTEST",
+			"category": "[<CategoryEnum.IT_DEVELOP: 'IT/개발'>, <CategoryEnum.IT_DEVELOP: 'IT/개발'>, <CategoryEnum.IT_DEVELOP: 'IT/개발'>]",
+			"is_team": "True",
+			"is_team_evidence": "참가를 원하는 학생, 개인, 기업 개발자 (5인 이내 팀)",
+			"summary": "개방형클라우드플랫폼 파스-타 기반 서비스 개발 및 아이디어 공모전은 파스-타 기반으로 클라우드와 데이터가 결합된 신규 응용서비스 개발 및 아이디어를 제출하는 공모전이다. 참가대상은 학생, 개인, 기업 개발자이며 5인 이내 팀으로 참가할 수 있다. 예선은 2019-12-09 ~ 2019-12-10(서면심사)이며 본선과 시상식은 10월 중 별도공지, 국회도서관에서 개최될 예정이다."
+		},
+		"comparison": {
+			"title": "CLOSE",
+			"host_organization": "EXACT",
+			"target_participants": "CLOSE",
+			"application_start_at": "EXACT",
+			"application_end_at": "EXACT",
+			"prize": "MISS",
+			"activity_kind": "EXACT",
+			"category": { "EXACT": 3, "ADDED": 0, "OMITTED": 1 },
+			"is_team": "EXACT",
+			"is_team_evidence": "EXACT"
+		}
+	},
+	{
+		"page_id": 36,
+		"elapsed_time": "0:00:06.371258",
+		"response": {
+			"title": "None",
+			"host_organization": "None",
+			"target_participants": "None",
+			"application_start_at": "None",
+			"application_end_at": "None",
+			"prize": "None",
+			"activity_kind": "None",
+			"category": "[]",
+			"is_team": "None",
+			"is_team_evidence": "None",
+			"summary": "None"
+		},
+		"comparison": {
+			"title": "EXACT",
+			"host_organization": "EXACT",
+			"target_participants": "EXACT",
+			"application_start_at": "EXACT",
+			"application_end_at": "EXACT",
+			"prize": "EXACT",
+			"activity_kind": "EXACT",
+			"category": { "EXACT": 0, "ADDED": 0, "OMITTED": 0 },
+			"is_team": "EXACT",
+			"is_team_evidence": "EXACT"
+		}
+	},
+	{
+		"page_id": 37,
+		"elapsed_time": "0:00:04.540050",
+		"response": {
+			"title": "None",
+			"host_organization": "None",
+			"target_participants": "None",
+			"application_start_at": "None",
+			"application_end_at": "None",
+			"prize": "None",
+			"activity_kind": "None",
+			"category": "[]",
+			"is_team": "None",
+			"is_team_evidence": "None",
+			"summary": "None"
+		},
+		"comparison": {
+			"title": "EXACT",
+			"host_organization": "EXACT",
+			"target_participants": "EXACT",
+			"application_start_at": "EXACT",
+			"application_end_at": "EXACT",
+			"prize": "EXACT",
+			"activity_kind": "EXACT",
+			"category": { "EXACT": 0, "ADDED": 0, "OMITTED": 0 },
+			"is_team": "EXACT",
+			"is_team_evidence": "EXACT"
+		}
+	},
+	{
+		"page_id": 38,
+		"elapsed_time": "0:00:19.179452",
+		"response": {
+			"title": "제3회 미래융합인재 발굴 소프트웨어 챌린지 SPECIAL",
+			"host_organization": "과학기술정보통신부",
+			"target_participants": "None",
+			"application_start_at": "None",
+			"application_end_at": "None",
+			"prize": "None",
+			"activity_kind": "ActivityKindEnum.CONTEST",
+			"category": "[<CategoryEnum.IDEA: '기획/아이디어'>, <CategoryEnum.IT_DEVELOP: 'IT/개발'>, <CategoryEnum.SCIENCE_ENGINEERING: '과학/공학'>]",
+			"is_team": "None",
+			"is_team_evidence": "None",
+			"summary": "과학기술정보통신부가 주최하는 제3회 미래융합인재 발굴 소프트웨어 챌린지(SPECIAL)이다. 참가 분야로 기획/아이디어, 웹/모바일/IT, 게임/소프트웨어, 과학/공학, 기타가 제시되어 있다."
+		},
+		"comparison": {
+			"title": "MISS",
+			"host_organization": "MISS",
+			"target_participants": "EXACT",
+			"application_start_at": "EXACT",
+			"application_end_at": "EXACT",
+			"prize": "EXACT",
+			"activity_kind": "MISS",
+			"category": { "EXACT": 0, "ADDED": 3, "OMITTED": 0 },
+			"is_team": "EXACT",
+			"is_team_evidence": "EXACT"
+		}
+	},
+	{
+		"page_id": 39,
+		"elapsed_time": "0:00:20.898325",
+		"response": {
+			"title": "네이밍•슬로건 합병 법무법인 명칭 공모전",
+			"host_organization": "법무법인 대륙아주·린",
+			"target_participants": "누구나 / 유치원 / 초등학생 / 중학생 / 고등학생 / 대학생 / 대학원생 / 일반인 / 외국인",
+			"application_start_at": "None",
+			"application_end_at": "None",
+			"prize": "None",
+			"activity_kind": "ActivityKindEnum.CONTEST",
+			"category": "[]",
+			"is_team": "None",
+			"is_team_evidence": "None",
+			"summary": "주최자는 법무법인 대륙아주·린이며 합병 법무법인 명칭을 공모한다. 대상은 누구나 포함되며 유치원, 초등학생, 중학생, 고등학생, 대학생, 대학원생, 일반인, 외국인이 참여 가능하다. 접수는 09.07~09.10이며 심사와 발표 일정은 09.11~09.15이다."
+		},
+		"comparison": {
+			"title": "MISS",
+			"host_organization": "MISS",
+			"target_participants": "MISS",
+			"application_start_at": "EXACT",
+			"application_end_at": "EXACT",
+			"prize": "EXACT",
+			"activity_kind": "MISS",
+			"category": { "EXACT": 0, "ADDED": 0, "OMITTED": 0 },
+			"is_team": "EXACT",
+			"is_team_evidence": "EXACT"
+		}
+	},
+	{
+		"page_id": 40,
+		"elapsed_time": "0:00:28.262226",
+		"response": {
+			"title": "2026 전국 대학생 스피치 대회",
+			"host_organization": "재단법인김대중노벨평화상기념관",
+			"target_participants": "전국 대학생",
+			"application_start_at": "None",
+			"application_end_at": "None",
+			"prize": "None",
+			"activity_kind": "ActivityKindEnum.CONTEST",
+			"category": "[]",
+			"is_team": "None",
+			"is_team_evidence": "None",
+			"summary": "2026 전국 대학생 스피치 대회. 주최기관 재단법인김대중노벨평화상기념관. D-68, 조회 154."
+		},
+		"comparison": {
+			"title": "MISS",
+			"host_organization": "MISS",
+			"target_participants": "MISS",
+			"application_start_at": "EXACT",
+			"application_end_at": "EXACT",
+			"prize": "EXACT",
+			"activity_kind": "MISS",
+			"category": { "EXACT": 0, "ADDED": 0, "OMITTED": 0 },
+			"is_team": "EXACT",
+			"is_team_evidence": "EXACT"
+		}
+	},
+	{
+		"page_id": 41,
+		"elapsed_time": "0:00:28.152974",
+		"response": {
+			"title": "2026 글로벌 패밀리 포럼 참가자 모집",
+			"host_organization": "한국가족단체협의회",
+			"target_participants": "None",
+			"application_start_at": "None",
+			"application_end_at": "None",
+			"prize": "None",
+			"activity_kind": "None",
+			"category": "[]",
+			"is_team": "None",
+			"is_team_evidence": "None",
+			"summary": "다양한 기관의 대외활동 모집 공고가 2026년을 중심으로 게시되어 있습니다. 각 공고는 제목과 주최기관으로 구성되며, 세부 일정이나 혜택 등은 본문에 따로 제시됩니다. 이 목록은 서포터즈, 포럼, 채용박람회 등 다양한 모집 공고를 한데 모은 것입니다."
+		},
+		"comparison": {
+			"title": "MISS",
+			"host_organization": "MISS",
+			"target_participants": "EXACT",
+			"application_start_at": "EXACT",
+			"application_end_at": "EXACT",
+			"prize": "EXACT",
+			"activity_kind": "EXACT",
+			"category": { "EXACT": 0, "ADDED": 0, "OMITTED": 0 },
+			"is_team": "EXACT",
+			"is_team_evidence": "EXACT"
+		}
+	},
+	{
+		"page_id": 42,
+		"elapsed_time": "0:00:26.327144",
+		"response": {
+			"title": "None",
+			"host_organization": "None",
+			"target_participants": "None",
+			"application_start_at": "None",
+			"application_end_at": "None",
+			"prize": "None",
+			"activity_kind": "ActivityKindEnum.EDUCATION",
+			"category": "[]",
+			"is_team": "None",
+			"is_team_evidence": "None",
+			"summary": "다양한 분야의 이벤트가 나열된 목록으로, 무료 교육/워크숍부터 유료 컨퍼런스·포럼까지 다양한 형태의 행사가 제공된다. 각 항목은 일정과 신청가능 인원·마감 여부 등의 정보를 함께 제시한다. 상세 검색을 통해 지역, 제목 영역, 태그 영역 등을 기반으로 탐색할 수 있다."
+		},
+		"comparison": {
+			"title": "EXACT",
+			"host_organization": "EXACT",
+			"target_participants": "EXACT",
+			"application_start_at": "EXACT",
+			"application_end_at": "EXACT",
+			"prize": "EXACT",
+			"activity_kind": "MISS",
+			"category": { "EXACT": 0, "ADDED": 0, "OMITTED": 0 },
+			"is_team": "EXACT",
+			"is_team_evidence": "EXACT"
+		}
+	},
+	{
+		"page_id": 43,
+		"elapsed_time": "0:00:05.182547",
+		"response": {
+			"title": "None",
+			"host_organization": "None",
+			"target_participants": "None",
+			"application_start_at": "None",
+			"application_end_at": "None",
+			"prize": "None",
+			"activity_kind": "None",
+			"category": "[]",
+			"is_team": "None",
+			"is_team_evidence": "None",
+			"summary": "None"
+		},
+		"comparison": {
+			"title": "EXACT",
+			"host_organization": "EXACT",
+			"target_participants": "EXACT",
+			"application_start_at": "EXACT",
+			"application_end_at": "EXACT",
+			"prize": "EXACT",
+			"activity_kind": "EXACT",
+			"category": { "EXACT": 0, "ADDED": 0, "OMITTED": 0 },
+			"is_team": "EXACT",
+			"is_team_evidence": "EXACT"
+		}
+	},
+	{
+		"page_id": 44,
+		"elapsed_time": "0:00:05.916163",
+		"response": {
+			"title": "None",
+			"host_organization": "None",
+			"target_participants": "None",
+			"application_start_at": "None",
+			"application_end_at": "None",
+			"prize": "None",
+			"activity_kind": "None",
+			"category": "[]",
+			"is_team": "None",
+			"is_team_evidence": "None",
+			"summary": "None"
+		},
+		"comparison": {
+			"title": "EXACT",
+			"host_organization": "EXACT",
+			"target_participants": "EXACT",
+			"application_start_at": "EXACT",
+			"application_end_at": "EXACT",
+			"prize": "EXACT",
+			"activity_kind": "EXACT",
+			"category": { "EXACT": 0, "ADDED": 0, "OMITTED": 0 },
+			"is_team": "EXACT",
+			"is_team_evidence": "EXACT"
+		}
+	},
+	{
+		"page_id": 45,
+		"elapsed_time": "0:00:25.012255",
+		"response": {
+			"title": "2026 해양환경보전 아이디어 공모전",
+			"host_organization": "한국해양진흥공사",
+			"target_participants": "None",
+			"application_start_at": "2026-08-24",
+			"application_end_at": "2026-10-02",
+			"prize": "None",
+			"activity_kind": "ActivityKindEnum.CONTEST",
+			"category": "[<CategoryEnum.IDEA: '기획/아이디어'>]",
+			"is_team": "None",
+			"is_team_evidence": "None",
+			"summary": "한국해양진흥공사 2026 해양환경보전 아이디어 공모전이다. 추천공모전으로 안내되어 있으며 2026.08.24 ~ 2026.10.02에 진행된다."
+		},
+		"comparison": {
+			"title": "MISS",
+			"host_organization": "MISS",
+			"target_participants": "EXACT",
+			"application_start_at": "MISS",
+			"application_end_at": "MISS",
+			"prize": "EXACT",
+			"activity_kind": "MISS",
+			"category": { "EXACT": 0, "ADDED": 1, "OMITTED": 0 },
+			"is_team": "EXACT",
+			"is_team_evidence": "EXACT"
+		}
+	},
+	{
+		"page_id": 46,
+		"elapsed_time": "0:00:05.688039",
+		"response": {
+			"title": "None",
+			"host_organization": "None",
+			"target_participants": "None",
+			"application_start_at": "None",
+			"application_end_at": "None",
+			"prize": "None",
+			"activity_kind": "None",
+			"category": "[]",
+			"is_team": "None",
+			"is_team_evidence": "None",
+			"summary": "None"
+		},
+		"comparison": {
+			"title": "EXACT",
+			"host_organization": "EXACT",
+			"target_participants": "EXACT",
+			"application_start_at": "EXACT",
+			"application_end_at": "EXACT",
+			"prize": "EXACT",
+			"activity_kind": "EXACT",
+			"category": { "EXACT": 0, "ADDED": 0, "OMITTED": 0 },
+			"is_team": "EXACT",
+			"is_team_evidence": "EXACT"
+		}
+	},
+	{
+		"page_id": 47,
+		"elapsed_time": "0:00:10.869932",
+		"response": {
+			"title": "None",
+			"host_organization": "None",
+			"target_participants": "None",
+			"application_start_at": "None",
+			"application_end_at": "None",
+			"prize": "자격증 및 상품권 특가",
+			"activity_kind": "None",
+			"category": "[]",
+			"is_team": "None",
+			"is_team_evidence": "None",
+			"summary": "None"
+		},
+		"comparison": {
+			"title": "EXACT",
+			"host_organization": "EXACT",
+			"target_participants": "EXACT",
+			"application_start_at": "EXACT",
+			"application_end_at": "EXACT",
+			"prize": "MISS",
+			"activity_kind": "EXACT",
+			"category": { "EXACT": 0, "ADDED": 0, "OMITTED": 0 },
+			"is_team": "EXACT",
+			"is_team_evidence": "EXACT"
+		}
+	},
+	{
+		"page_id": 48,
+		"elapsed_time": "0:00:17.676831",
+		"response": {
+			"title": "제5회 청소년 메이커 경진대회[YOUTH MAKER] 참가자 모집",
+			"host_organization": "None",
+			"target_participants": "None",
+			"application_start_at": "None",
+			"application_end_at": "None",
+			"prize": "None",
+			"activity_kind": "ActivityKindEnum.COMPETITION",
+			"category": "[]",
+			"is_team": "None",
+			"is_team_evidence": "None",
+			"summary": "제5회 청소년 메이커 경진대회 참가자 모집 공고. 장소는 시립수서청소년센터이며 교육 일정은 2026.07.06 ~ 2026.09.01이다."
+		},
+		"comparison": {
+			"title": "MISS",
+			"host_organization": "EXACT",
+			"target_participants": "EXACT",
+			"application_start_at": "EXACT",
+			"application_end_at": "EXACT",
+			"prize": "EXACT",
+			"activity_kind": "MISS",
+			"category": { "EXACT": 0, "ADDED": 0, "OMITTED": 0 },
+			"is_team": "EXACT",
+			"is_team_evidence": "EXACT"
+		}
+	},
+	{
+		"page_id": 50,
+		"elapsed_time": "0:00:06.484959",
+		"response": {
+			"title": "None",
+			"host_organization": "None",
+			"target_participants": "None",
+			"application_start_at": "None",
+			"application_end_at": "None",
+			"prize": "None",
+			"activity_kind": "None",
+			"category": "[]",
+			"is_team": "None",
+			"is_team_evidence": "None",
+			"summary": "None"
+		},
+		"comparison": {
+			"title": "EXACT",
+			"host_organization": "EXACT",
+			"target_participants": "EXACT",
+			"application_start_at": "EXACT",
+			"application_end_at": "EXACT",
+			"prize": "EXACT",
+			"activity_kind": "EXACT",
+			"category": { "EXACT": 0, "ADDED": 0, "OMITTED": 0 },
+			"is_team": "EXACT",
+			"is_team_evidence": "EXACT"
+		}
+	},
+	{
+		"page_id": 51,
+		"elapsed_time": "0:00:20.423442",
+		"response": {
+			"title": "None",
+			"host_organization": "None",
+			"target_participants": "None",
+			"application_start_at": "None",
+			"application_end_at": "None",
+			"prize": "None",
+			"activity_kind": "None",
+			"category": "[]",
+			"is_team": "None",
+			"is_team_evidence": "None",
+			"summary": "기계 학습은 경험을 통해 자동으로 개선하는 컴퓨터 알고리즘의 연구이다. 대량의 데이터를 분석해 '미래를 예측하는 기술'이자 인공지능의 한 분야로 간주된다. 기계 학습의 핵심은 표현(representation)과 일반화(generalization)에 있으며, 이는 학습 이론 분야이기도 하고, 알고리즘 유형으로는 지도 학습, 자율 학습(기계 학습), 준 지도 학습, 강화 학습, 심화 학습 등이 있다."
+		},
+		"comparison": {
+			"title": "EXACT",
+			"host_organization": "EXACT",
+			"target_participants": "EXACT",
+			"application_start_at": "EXACT",
+			"application_end_at": "EXACT",
+			"prize": "EXACT",
+			"activity_kind": "EXACT",
+			"category": { "EXACT": 0, "ADDED": 0, "OMITTED": 0 },
+			"is_team": "EXACT",
+			"is_team_evidence": "EXACT"
+		}
+	},
+	{
+		"page_id": 52,
+		"elapsed_time": "0:00:05.835033",
+		"response": {
+			"title": "None",
+			"host_organization": "None",
+			"target_participants": "None",
+			"application_start_at": "None",
+			"application_end_at": "None",
+			"prize": "None",
+			"activity_kind": "None",
+			"category": "[]",
+			"is_team": "None",
+			"is_team_evidence": "None",
+			"summary": "None"
+		},
+		"comparison": {
+			"title": "EXACT",
+			"host_organization": "EXACT",
+			"target_participants": "EXACT",
+			"application_start_at": "EXACT",
+			"application_end_at": "EXACT",
+			"prize": "EXACT",
+			"activity_kind": "EXACT",
+			"category": { "EXACT": 0, "ADDED": 0, "OMITTED": 0 },
+			"is_team": "EXACT",
+			"is_team_evidence": "EXACT"
+		}
+	},
+	{
+		"page_id": 53,
+		"elapsed_time": "0:00:12.401520",
+		"response": {
+			"title": "None",
+			"host_organization": "None",
+			"target_participants": "None",
+			"application_start_at": "None",
+			"application_end_at": "None",
+			"prize": "None",
+			"activity_kind": "None",
+			"category": "[]",
+			"is_team": "None",
+			"is_team_evidence": "None",
+			"summary": "scikit-learn은 Machine Learning in Python으로, Simple and efficient tools for predictive data analysis이며 Accessible to everybody, and reusable in various contexts라는 목표를 제시한다. Built on NumPy, SciPy, and matplotlib로 구성된 오픈소스 프로젝트이며, Open source, commercially usable - BSD license를 강조한다. Classification, Regression, Clustering, Dimensionality reduction 등의 예제와 다양한 알고리즘이 소개된다."
+		},
+		"comparison": {
+			"title": "EXACT",
+			"host_organization": "EXACT",
+			"target_participants": "EXACT",
+			"application_start_at": "EXACT",
+			"application_end_at": "EXACT",
+			"prize": "EXACT",
+			"activity_kind": "EXACT",
+			"category": { "EXACT": 0, "ADDED": 0, "OMITTED": 0 },
+			"is_team": "EXACT",
+			"is_team_evidence": "EXACT"
+		}
+	}
+]

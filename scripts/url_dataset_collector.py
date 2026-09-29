@@ -1,7 +1,7 @@
 import json
 
-from app.parsers.html_parser import HtmlParser
-from app.utils.url_list import TRAIN_URLS, TEST_URLS
+from src.parsers.html_parser import HtmlParser
+from scripts.url_list import TRAIN_URLS, TEST_URLS
 
 if __name__ == "__main__":
     htmlParser = HtmlParser()

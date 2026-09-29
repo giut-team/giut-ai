@@ -1,8 +1,8 @@
 import json
 from datetime import datetime
 
-from app.models.dto import ExtractedFields
-from app.models.field_extractor import (
+from src.llm.dto import ExtractedFields
+from src.llm.field_extractor import (
     load_page_text,
     extract_fields_from_text,
 )
@@ -12,11 +12,11 @@ MAX_PAGE_ID = 34  # 공모전 상세페이지만. 네거티브 모두 제거 (+ 
 
 
 async def test_extract_fields():
-    with open("html_data/test/test_blocks.json", "r") as f_blocks:
+    with open("data/test/test_blocks.json", "r") as f_blocks:
         blocks = json.load(f_blocks)["text"]
 
     ### 노이즈 제거 코드
-    # with open("html_data/test/test_labels.json", "r") as f_rel_labels:
+    # with open("data/test/test_labels.json", "r") as f_rel_labels:
     #     rel_labels = {l["id"]: l["is_relevant"] for l in json.load(f_rel_labels)}
 
     # for b in blocks[:]:
@@ -40,7 +40,7 @@ async def test_extract_fields():
         if b["page_id"] == page_id:
             page_blocks.setdefault(page_id, []).append(b)
 
-    with open("html_data/test/llm_answer_labels.json", "r") as f_labels:
+    with open("data/test/llm_answer_labels.json", "r") as f_labels:
         labels = json.load(f_labels)[: len(blocks)]
 
         page_labels = {}
@@ -48,7 +48,9 @@ async def test_extract_fields():
             page_labels[l["page_id"]] = l
 
     with open(
-        f"tests/results/llm_results_{datetime.now()}.json".replace(":", "_"),
+        f"results/field_extractor/text/llm_results_{datetime.now()}.json".replace(
+            ":", "_"
+        ),
         "w",
     ) as f_result:
         try:
