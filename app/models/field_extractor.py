@@ -26,7 +26,7 @@ def load_page_text(blocks: list[dict]) -> str:
     return page_text
 
 
-async def extract_fields_from_text(page_text: str) -> ExtractedFields:
+async def extract_fields_from_text(page_text: str):
     response = await create_json_completion(
         messages=[
             {
@@ -38,7 +38,7 @@ async def extract_fields_from_text(page_text: str) -> ExtractedFields:
         response_format=ExtractedFields,
     )
 
-    return response.choices[0].message.parsed
+    return (response.choices[0].message.parsed, response.usage)
 
 
 def _download_image_bytes(url: str, timeout: float = 30.0) -> bytes:
@@ -87,8 +87,10 @@ def convert_images_to_base64(images_paths: list[str]) -> list[str]:
     return data_urls
 
 
-async def extract_fields_from_images(images: list[Image.Image]) -> ExtractedFields:
-    response = await create_json_completion(
+async def extract_fields_from_images(
+    images: list[Image.Image],
+) -> tuple[ExtractedFields, object]:
+    response, usage = await create_json_completion(
         messages=[
             {
                 "role": "developer",
@@ -102,4 +104,4 @@ async def extract_fields_from_images(images: list[Image.Image]) -> ExtractedFiel
         response_format=ExtractedFields,
     )
 
-    return response.choices[0].message.parsed
+    return response.choices[0].message.parsed, usage
