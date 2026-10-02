@@ -447,6 +447,9 @@ class HtmlParser:
             ib["size"]["display_area"] = display_area
             image_areas.append(display_area)
 
+        if len(image_areas) == 0:
+            return []
+
         max_area = max(image_areas)
 
         for ib in image_blocks:
