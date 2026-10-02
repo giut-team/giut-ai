@@ -198,6 +198,16 @@ class HtmlParser:
             # 페이지 스스로도 자기 JS로 임의 주소에 요청을 보낼 수 있으므로 모든 하위 요청 검증
             page.route("**/*", self._guard_route)
             page.goto(url, timeout=self.timeout * 1000, wait_until="networkidle")
+            # 각 이미지의 원본 사이즈 및 브라우저 측정 사이즈 저장
+            page.locator("img").evaluate_all("""images => {
+                for (const img of images) {
+                    const rect = img.getBoundingClientRect();
+                    img.setAttribute('data-parser-original-width', img.naturalWidth);
+                    img.setAttribute('data-parser-original-height', img.naturalHeight);
+                    img.setAttribute('data-parser-display-width', rect.width);
+                    img.setAttribute('data-parser-display-height', rect.height);
+                }
+            }""")
             html = page.content()
         finally:
             page.close()
@@ -248,9 +258,11 @@ class HtmlParser:
                     continue
                 text_blocks.append(feat)
 
+        image_blocks = self._calculate_image_relative_area(image_blocks)
+
         return ParsedPage(text=text_blocks, images=image_blocks, links=link_blocks)
 
-    def parse_url(self, url: str, render: bool | str = "auto") -> ParsedPage:
+    def parse_url(self, url: str, render: bool | str = True) -> ParsedPage:
         # fetch -> parse 바로 실행하는 헬퍼
         content = self.fetch(url, render=render)
         return self.parse(content, base_url=url)
@@ -396,7 +408,7 @@ class HtmlParser:
 
         link_char_count = sum(len(a.get_text(" ", strip=True)) for a in links_in)
 
-        return {
+        features = {
             "text": block_text[:256],
             "tag": tag.name,
             "class_id": class_id,
@@ -408,6 +420,38 @@ class HtmlParser:
                 "rel_pos": block_index / max(total_blocks, 1),
             },
         }
+
+        if tag.name == "img":
+            # 이미지 원본/브라우저 표시 사이즈 피처 추가
+            features["size"] = {}
+            for name in (
+                "original_width",
+                "original_height",
+                "display_width",
+                "display_height",
+            ):
+                # 정적 HTML에는 브라우저 측정값이 없으므로 0으로 처리
+                value = tag.get(f"data-parser-{name.replace('_', '-')}")
+                try:
+                    features["size"][name] = float(value) if value else 0
+                except (TypeError, ValueError):
+                    features["size"][name] = 0
+
+        return features
+
+    def _calculate_image_relative_area(self, image_blocks: list[dict]) -> list[dict]:
+        # 사이트 내 표시되는 이미지 상대 면적 구하기
+        image_areas = []
+        for ib in image_blocks:
+            display_area = ib["size"]["display_width"] * ib["size"]["display_height"]
+            ib["size"]["display_area"] = display_area
+            image_areas.append(display_area)
+
+        max_area = max(image_areas)
+
+        for ib in image_blocks:
+            ib["size"]["relative_display_area"] = ib["size"]["display_area"] / max_area
+        return image_blocks
 
     @staticmethod
     def _is_own(block, node) -> bool:
