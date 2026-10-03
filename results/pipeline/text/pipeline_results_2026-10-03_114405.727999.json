@@ -1,0 +1,37 @@
+[
+	{
+		"page_id": 1,
+		"elapsed_time": "0:00:28.605363",
+		"input_tokens": 1877,
+		"cached_input_tokens": 0,
+		"cache_rate": 0.0,
+		"output_tokens": 6363,
+		"response": {
+			"title": "2023 kobaco 공모전",
+			"host_organization": "kobaco",
+			"is_univ_possible": "True",
+			"application_start_at": "None",
+			"application_end_at": "None",
+			"total_prize_amount": "82000000",
+			"prize": "대상(TV/인쇄): 대통령상 1,000만원",
+			"activity_kind": "ActivityKindEnum.CONTEST",
+			"category": "[<CategoryEnum.IDEA: '기획/아이디어'>, <CategoryEnum.MARKETING: '홍보/마케팅'>, <CategoryEnum.DESIGN: '디자인'>]",
+			"is_team": "True",
+			"is_team_evidence": "개인 혹은 팀(최대 3명)으로 응모 가능",
+			"summary": "전국민(주한 외국인 및 재외국민 참여 가능, 단 한글 작품에 한함) 대상(대통령상) 1,000만원 등 총상금 8,200만원이며, 마감 기한이 지나 접수된 작품은 심사 대상에서 제외됨(마감일 접속량 증가로 신청 및 접수가 원활하지 않을 수 있음)."
+		},
+		"comparison": {
+			"title": "MISS",
+			"host_organization": "MISS",
+			"is_univ_possible": "EXACT",
+			"application_start_at": "MISS",
+			"application_end_at": "MISS",
+			"total_prize_amount": "EXACT",
+			"prize": "CLOSE",
+			"activity_kind": "EXACT",
+			"category": { "EXACT": 1, "ADDED": 2, "OMITTED": 1 },
+			"is_team": "EXACT",
+			"is_team_evidence": "CLOSE"
+		}
+	}
+]

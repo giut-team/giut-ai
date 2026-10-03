@@ -1,0 +1,37 @@
+[
+	{
+		"page_id": 0,
+		"elapsed_time": "0:00:26.279111",
+		"input_tokens": 2744,
+		"cached_input_tokens": 0,
+		"cache_rate": 0.0,
+		"output_tokens": 5601,
+		"response": {
+			"title": "팩트체크 공모전",
+			"host_organization": "None",
+			"is_univ_possible": "True",
+			"application_start_at": "None",
+			"application_end_at": "None",
+			"total_prize_amount": "None",
+			"prize": "None",
+			"activity_kind": "ActivityKindEnum.CONTEST",
+			"category": "[<CategoryEnum.PHOTO_CONTENTS: '사진/영상/콘텐츠'>, <CategoryEnum.LITERATURE: '문학/글쓰기'>, <CategoryEnum.IT_DEVELOP: 'IT/개발'>]",
+			"is_team": "True",
+			"is_team_evidence": "참가 자격 : 개인 및 팀(내국인)",
+			"summary": "팩트체크 부문 : 영상 또는 텍스트, 웹서비스의 형태로 제작한 팩트체크 활동 결과물 및 콘텐츠 부문 : 캠페인/공익광고 영상, 웹툰, 팟캐스트, 카드뉴스, 에세이, 대본, 체험기, 표어/슬로건, 교안, 분석글 등 공모주제에 대한 자유롭고 창의적인 형식의 모든 콘텐츠를 출품하는 공모전이다."
+		},
+		"comparison": {
+			"title": "MISS",
+			"host_organization": "MISS",
+			"is_univ_possible": "EXACT",
+			"application_start_at": "MISS",
+			"application_end_at": "MISS",
+			"total_prize_amount": "EXACT",
+			"prize": "MISS",
+			"activity_kind": "EXACT",
+			"category": { "EXACT": 3, "ADDED": 0, "OMITTED": 0 },
+			"is_team": "EXACT",
+			"is_team_evidence": "CLOSE"
+		}
+	}
+]
