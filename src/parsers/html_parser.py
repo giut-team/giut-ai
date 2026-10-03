@@ -453,6 +453,8 @@ class HtmlParser:
             return []
 
         max_area = max(image_areas)
+        if max_area == 0:
+            return []
 
         for ib in image_blocks:
             ib["size"]["relative_display_area"] = ib["size"]["display_area"] / max_area
