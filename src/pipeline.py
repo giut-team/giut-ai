@@ -1,3 +1,4 @@
+from datetime import datetime
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -10,7 +11,7 @@ from src.parsers.html_parser import HtmlParser
 from training.config import DEVICE, NUM_KEYS
 
 
-async def run_pipeline(url: str):
+async def run_pipeline(url: str, use_classifier: bool = True):
     # URL의 텍스트 블록 중 relevant 본문을 모아 필드 추출 결과와 토큰 사용량 반환
     domain = (urlparse(url).hostname or "").lower()
     if domain in {"rss.uos.ac.kr", "contestkorea.com", "www.contestkorea.com"}:
@@ -20,15 +21,21 @@ async def run_pipeline(url: str):
     async with HtmlParser() as parser:
         blocks = (await parser.parse_url(url, render=True)).text
 
-    ##### 지울예정
-    with open("results/html_extracted_blocks_261003.json", "w") as f:
-        import json
-
-        json.dump(blocks, f, ensure_ascii=False)
+    ##### 파싱 결과 기록
+    # start_at = datetime.now()
+    # with open(
+    #     f"results/html_extracted_blocks_{str(start_at).replace(" ","_").replace(":","")}.json",
+    #     "w",
+    # ) as f:
+    #     import json
+    #     json.dump(blocks, f, ensure_ascii=False)
     #####
 
     relevant_blocks = []
-    if blocks:
+    if blocks is None or len(blocks) == 0:
+        return None
+
+    if use_classifier:
         model_dir = Path(__file__).resolve().parents[1] / "models" / "text_classifier"
         scaler = joblib.load(model_dir / "num_scaler.joblib")
         classifier = TextClassifier(n_num=len(NUM_KEYS)).to(DEVICE)
@@ -74,12 +81,23 @@ async def run_pipeline(url: str):
                 )
 
     page_text = load_page_text(relevant_blocks)
+
+    ##### 분류기 결과 기록
+    # with open(
+    #     f"results/relevant_page_text_{str(start_at).replace(" ","_").replace(":","")}.txt",
+    #     "w",
+    # ) as f2:
+    #     f2.write(page_text)
+    #####
+
     return await extract_fields_from_text(page_text)
 
 
 if __name__ == "__main__":
     import asyncio
 
-    TEST_URL = "https://linkareer.com/activity/346834"
+    TEST_URL = (
+        "https://www.wevity.com/?c=find&s=1&gub=1&cidx=21&gbn=view&gp=1&ix=110623"
+    )
 
     print(asyncio.run(run_pipeline(TEST_URL)))
