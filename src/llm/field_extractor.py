@@ -7,6 +7,7 @@ import re
 import sys
 from urllib.parse import urlparse
 
+from openai.types import CompletionUsage
 import requests
 from PIL import Image
 
@@ -26,7 +27,9 @@ def load_page_text(blocks: list[dict]) -> str:
     return page_text
 
 
-async def extract_fields_from_text(page_text: str):
+async def extract_fields_from_text(
+    page_text: str,
+) -> tuple[ExtractedFields, CompletionUsage]:
     response = await create_json_completion(
         messages=[
             {
@@ -87,7 +90,9 @@ def convert_images_to_base64(images_paths: list[str]) -> list[str]:
     return data_urls
 
 
-async def extract_fields_from_images(images: list[Image.Image]):
+async def extract_fields_from_images(
+    images: list[Image.Image],
+) -> tuple[ExtractedFields, CompletionUsage]:
     response = await create_json_completion(
         messages=[
             {

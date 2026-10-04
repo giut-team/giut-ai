@@ -128,27 +128,27 @@ class HtmlParser:
         self._playwright = None
         self._browser = None
 
-    def close(self) -> None:
+    async def close(self) -> None:
         # 렌더링용 브라우저를 띄운 적이 있다면 정리. 앱 또는 with block 종료 시 호출
         if self._browser is not None:
-            self._browser.close()
+            await self._browser.close()
             self._browser = None
         if self._playwright is not None:
-            self._playwright.stop()
+            await self._playwright.stop()
             self._playwright = None
 
-    def __enter__(self) -> "HtmlParser":
+    async def __aenter__(self) -> "HtmlParser":
         return self
 
-    def __exit__(self, *exc_info) -> None:
-        self.close()
+    async def __aexit__(self, *exc_info) -> None:
+        await self.close()
 
-    def fetch(self, url: str, render: bool | str = True) -> bytes:
+    async def fetch(self, url: str, render: bool | str = True) -> bytes:
         # url 요청 -> HTML 원문(bytes)을 반환
         # parse()의 BeautifulSoup에서 디코딩 (<meta charset> / BOM / 헤더 종합 판단)
 
         if render is True:
-            return self._fetch_rendered(url)
+            return await self._fetch_rendered(url)
         if render is False:
             return self._fetch_static(url)
 
@@ -185,21 +185,23 @@ class HtmlParser:
 
         raise UnsafeURLError(f"too many redirects while fetching {url!r}")
 
-    def _fetch_rendered(self, url: str) -> bytes:
+    async def _fetch_rendered(self, url: str) -> bytes:
         # Playwright로 페이지를 열어 JS 실행이 끝난 뒤(networkidle) DOM을 그대로 가져온다.
         self._validate_url(url)
-        browser = self._ensure_browser()  # 브라우저가 열려 있으면 재사용
+        browser = await self._ensure_browser()  # 브라우저가 열려 있으면 재사용
 
-        page = browser.new_page(
+        page = await browser.new_page(
             user_agent=DEFAULT_USER_AGENT,
             ignore_https_errors=True,
         )
         try:
             # 페이지 스스로도 자기 JS로 임의 주소에 요청을 보낼 수 있으므로 모든 하위 요청 검증
-            page.route("**/*", self._guard_route)
-            page.goto(url, timeout=self.timeout * 1000, wait_until="networkidle")
+            await page.route("**/*", self._guard_route)
+            await page.goto(
+                url, timeout=self.timeout * 1000, wait_until="domcontentloaded"
+            )  # "networkidle" 보다 안정적 (사이트 요청이 계속 들어올 경우 대비)
             # 각 이미지의 원본 사이즈 및 브라우저 측정 사이즈 저장
-            page.locator("img").evaluate_all("""images => {
+            await page.locator("img").evaluate_all("""images => {
                 for (const img of images) {
                     const rect = img.getBoundingClientRect();
                     img.setAttribute('data-parser-original-width', img.naturalWidth);
@@ -208,9 +210,9 @@ class HtmlParser:
                     img.setAttribute('data-parser-display-height', rect.height);
                 }
             }""")
-            html = page.content()
+            html = await page.content()
         finally:
-            page.close()
+            await page.close()
 
         return html.encode("utf-8")
 
@@ -262,9 +264,9 @@ class HtmlParser:
 
         return ParsedPage(text=text_blocks, images=image_blocks, links=link_blocks)
 
-    def parse_url(self, url: str, render: bool | str = True) -> ParsedPage:
+    async def parse_url(self, url: str, render: bool | str = True) -> ParsedPage:
         # fetch -> parse 바로 실행하는 헬퍼
-        content = self.fetch(url, render=render)
+        content = await self.fetch(url, render=render)
         return self.parse(content, base_url=url)
 
     # -- 내부 동작 (fetch) -------------------------------------------------
@@ -292,20 +294,20 @@ class HtmlParser:
                     f"blocked non-public address: {ip} (host={hostname!r})"
                 )
 
-    def _guard_route(self, route) -> None:
+    async def _guard_route(self, route) -> None:
         try:
             self._validate_url(route.request.url)
         except UnsafeURLError:
-            route.abort()
+            await route.abort()
             return
-        route.continue_()
+        await route.continue_()
 
-    def _ensure_browser(self):
+    async def _ensure_browser(self):
         if self._browser is None:
-            from playwright.sync_api import sync_playwright
+            from playwright.async_api import async_playwright
 
-            self._playwright = sync_playwright().start()
-            self._browser = self._playwright.chromium.launch()
+            self._playwright = await async_playwright().start()
+            self._browser = await self._playwright.chromium.launch()
 
         return self._browser
 
@@ -447,7 +449,12 @@ class HtmlParser:
             ib["size"]["display_area"] = display_area
             image_areas.append(display_area)
 
+        if len(image_areas) == 0:
+            return []
+
         max_area = max(image_areas)
+        if max_area == 0:
+            return []
 
         for ib in image_blocks:
             ib["size"]["relative_display_area"] = ib["size"]["display_area"] / max_area
