@@ -9,7 +9,7 @@ OPENAI_LLM_PROMPT = """
 
 - title (string): 공모전명 (실제 공모전 정식 명칭을 횟수, 수식어 등 생략 없이 명사형으로 작성)
 - host_organization (string): 주최기관 (후원기관은 미포함)
-- target_participants (string): 참가 가능 대상('대학교 재학생만', '대학교 재학생 및 휴학생', '대학생 및 성인', '대학생 및 성인 참여 불가' 중 해당되는 범위가 가장 넓은 것 택1) 참가 자격이 명시되지 않은 경우 null
+- target_participants (string): 참가 가능 대상('대학교 재학생만', '대학교 재학생 및 휴학생만', '대학생 및 성인 참여 가능'('전 국민 누구나'도 포함), '대학생 및 성인 참여 불가' 중 해당되는 것 택1) 참가 자격이 명시되지 않은 경우 null
 - application_start_at (string, YYYY-MM-DD 형식): 접수 시작일
 - application_end_at (string, YYYY-MM-DD 형식): 접수 마감일
 - total_prize_amount (int): 총 상금 금액(원 단위). 상금 규모를 알 수 없거나 등수별로 시상하는 형태가 아니라면 null
@@ -32,7 +32,7 @@ OPENAI_VLM_PROMPT = """
 
 - title (string): 공모전명 (실제 공모전 정식 명칭을 횟수, 수식어 등 생략 없이 명사형으로 작성)
 - host_organization (string): 주최기관 (후원기관은 미포함)
-- target_participants (string): 참가 가능 대상('대학교 재학생만', '대학교 재학생 및 휴학생', '대학생 및 성인', '대학생 및 성인 참여 불가' 중 해당되는 범위가 가장 넓은 것 택1) 참가 자격이 명시되지 않은 경우 null
+- target_participants (string): 참가 가능 대상('대학교 재학생만', '대학교 재학생 및 휴학생만', '대학생 및 성인 참여 가능'('전 국민 누구나'도 포함), '대학생 및 성인 참여 불가' 중 해당되는 것 택1) 참가 자격이 명시되지 않은 경우 null
 - application_start_at (string, YYYY-MM-DD 형식): 접수 시작일
 - application_end_at (string, YYYY-MM-DD 형식): 접수 마감일
 - total_prize_amount (int): 총 상금 금액(원 단위). 상금 규모를 알 수 없거나 등수별로 시상하는 형태가 아니라면 null

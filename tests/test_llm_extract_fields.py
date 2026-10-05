@@ -13,32 +13,24 @@ MAX_PAGE_ID = 34  # 공모전 상세페이지만. 네거티브 모두 제거 (+ 
 # MAX_PAGE_ID = 42  # 공모전 주최사 공홈까지만. 하드 네거티브 포함
 
 
-@pytest.mark.skip(reason="결과 파일 저장용 헬퍼 함수")
-def save_results(id, fields_result, usage, comparison, elapsed_time, path: str):
-    with open(path, "w") as f_result:
-        try:
-            f_result.write("[")
+@pytest.mark.skip(reason="한 페이지당 결과 블록 생성용 헬퍼 함수")
+def make_result_block(id, fields_result, usage, comparison, elapsed_time):
+    input_tokens = usage.prompt_tokens
+    cached_input_tokens = usage.prompt_tokens_details.cached_tokens
+    output_tokens = usage.completion_tokens
 
-            input_tokens = usage.prompt_tokens
-            cached_input_tokens = usage.prompt_tokens_details.cached_tokens
-            output_tokens = usage.completion_tokens
+    result_block = {
+        "page_id": id,
+        "elapsed_time": str(elapsed_time),
+        "input_tokens": input_tokens,
+        "cached_input_tokens": cached_input_tokens,
+        "cache_rate": cached_input_tokens / input_tokens,
+        "output_tokens": output_tokens,
+        "response": ExtractedFields.to_dict(fields_result),
+        "comparison": comparison,
+    }
 
-            result_block = {
-                "page_id": id,
-                "elapsed_time": str(elapsed_time),
-                "input_tokens": input_tokens,
-                "cached_input_tokens": cached_input_tokens,
-                "cache_rate": cached_input_tokens / input_tokens,
-                "output_tokens": output_tokens,
-                "response": ExtractedFields.to_dict(fields_result),
-                "comparison": comparison,
-            }
-
-            add_data = json.dumps(result_block, ensure_ascii=False)
-            f_result.write(add_data + ",")
-
-        finally:
-            f_result.write("]")
+    return result_block
 
 
 async def test_extract_fields():
@@ -77,27 +69,37 @@ async def test_extract_fields():
         for l in labels:
             page_labels[l["page_id"]] = l
 
+    result_blocks = []
+
+    try:
         for id, blocks in page_blocks.items():
             page_text = load_page_text(blocks)
 
-        started_at = datetime.now()
-        fields_result, usage = await extract_fields_from_text(page_text)
-        ended_at = datetime.now()
-        elapsed_time = str(ended_at - started_at)
+            started_at = datetime.now()
+            fields_result, usage = await extract_fields_from_text(page_text)
+            ended_at = datetime.now()
+            elapsed_time = str(ended_at - started_at)
 
-        print("\n" + fields_result.format())
-        print("elapsed_time:", elapsed_time)
+            print("\n" + fields_result.format())
+            print("elapsed_time:", elapsed_time)
 
-        comparison = fields_result.compare(ExtractedFields.from_dict(page_labels[id]))
+            comparison = fields_result.compare(
+                ExtractedFields.from_dict(page_labels[id])
+            )
 
-        save_results(
-            id=id,
-            fields_result=fields_result,
-            usage=usage,
-            comparison=comparison,
-            elapsed_time=elapsed_time,
-            path=f"results/field_extractor/text/llm_results_{str(started_at).replace(" ", "_").replace(":", "")}",
-        )
+            result = make_result_block(
+                id=id,
+                fields_result=fields_result,
+                usage=usage,
+                comparison=comparison,
+                elapsed_time=elapsed_time,
+            )
+            result_blocks.append(result)
+
+    finally:
+        path = f"results/field_extractor/text/llm_results_{str(started_at).replace(" ", "_").replace(":", "")}.json"
+        with open(path, "w") as f_result:
+            json.dump(result_blocks, f_result, ensure_ascii=False)
 
 
 async def test_pipeline():
@@ -126,11 +128,14 @@ async def test_pipeline():
         ExtractedFields.from_dict(page_labels[TEST_PAGE_ID])
     )
 
-    save_results(
+    result = make_result_block(
         id=TEST_PAGE_ID,
         fields_result=fields_result,
         usage=usage,
         comparison=comparison,
         elapsed_time=elapsed_time,
-        path=f"results/pipeline/text/pipeline_results_{str(started_at).replace(" ", "_").replace(":", "")}.json",
     )
+
+    path = f"results/pipeline/text/pipeline_results_{str(started_at).replace(" ", "_").replace(":", "")}.json"
+    with open(path, "w") as f_result:
+        json.dump(result, f_result, ensure_ascii=False)

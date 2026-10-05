@@ -15,8 +15,8 @@ logger = logging.getLogger(__name__)
 
 class TargetParticipantsEnum(Enum):
     ENROLLED_ONLY = "대학교 재학생만"
-    ENROLLED_OR_OFF = "대학교 재학생 및 휴학생"
-    ALL = "대학생 및 성인"
+    ENROLLED_OR_OFF = "대학교 재학생 및 휴학생만"
+    ALL = "대학생 및 성인 참여 가능"
     NOT_FOR_UNIV = "대학생 및 성인 참여 불가"
 
 
