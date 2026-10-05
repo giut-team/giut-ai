@@ -62,7 +62,9 @@ async def test_extract_fields():
         if b["page_id"] == page_id:
             page_blocks.setdefault(page_id, []).append(b)
 
-    with open("data/test/llm_answer_labels.json", "r") as f_labels:
+    with open(
+        "data/test/llm_answer_labels_participants_double_enum.json", "r"
+    ) as f_labels:
         labels = json.load(f_labels)[: len(blocks)]
 
         page_labels = {}
