@@ -65,7 +65,7 @@ async def test_extract_fields():
     with open(
         "data/test/llm_answer_labels_participants_double_enum.json", "r"
     ) as f_labels:
-        labels = json.load(f_labels)[: len(blocks)]
+        labels = json.load(f_labels)
 
         page_labels = {}
         for l in labels:
