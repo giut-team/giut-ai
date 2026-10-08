@@ -10,7 +10,7 @@ from torchvision import transforms
 from src.ml.image_classifier import ImageClassifier
 
 IMAGES_DIR = Path("data/images/train")
-IMAGE_LABELS_PATH = Path("data/images/image_train_labels.json")
+IMAGE_LABELS_PATH = IMAGES_DIR / "image_cnn_labels.json"
 IMAGE_MODELS_DIR = Path("models/image_classifier")
 IMAGE_MODEL_PATH = IMAGE_MODELS_DIR / "image_classifier.pt"
 

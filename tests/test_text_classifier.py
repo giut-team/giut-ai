@@ -12,8 +12,7 @@ from training.train_text_classifier import (
     load_samples,
 )
 
-TEST_BLOCKS_PATH = Path("data/test/test_blocks.json")
-TEST_LABELS_PATH = Path("data/test/test_labels.json")
+TEXT_DIR = Path("data/text/test")
 
 
 def main():
@@ -21,7 +20,7 @@ def main():
     classifier = TextClassifier(n_num=len(NUM_KEYS)).to(DEVICE)
     classifier.head.load_state_dict(torch.load(TEXT_HEAD_PATH, map_location=DEVICE))
 
-    blocks, labels = load_samples(TEST_BLOCKS_PATH, TEST_LABELS_PATH)
+    blocks, labels = load_samples(TEXT_DIR)
 
     pages: dict[int, list[dict]] = {}
 

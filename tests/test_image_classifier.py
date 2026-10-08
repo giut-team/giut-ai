@@ -10,6 +10,7 @@ from training.train_image_classifier import (
     BATCH_SIZE,
     DEVICE,
     IMAGE_EXTENSIONS,
+    IMAGE_MODEL_PATH,
     IMAGENET_MEAN,
     IMAGENET_STD,
     ImageDataset,
@@ -17,9 +18,8 @@ from training.train_image_classifier import (
 )
 
 IMAGES_DIR = Path("data/images/test")
-IMAGE_LABELS_PATH = Path("data/images/image_test_labels.json")
-IMAGE_MODEL_PATH = Path("models/image_classifier/image_classifier_261007.pt")
-THRESHOLD = 0.5
+IMAGE_LABELS_PATH = IMAGES_DIR / "image_cnn_labels.json"
+
 NUM_WORKERS = 0
 
 
@@ -67,7 +67,7 @@ def main():
     state_dict = torch.load(IMAGE_MODEL_PATH, map_location=DEVICE)
     classifier.model.load_state_dict(state_dict)
 
-    metrics = evaluate(classifier, test_loader, threshold=THRESHOLD)
+    metrics = evaluate(classifier, test_loader)
     print(f"device: {DEVICE}")
     print(f"test samples: {metrics['n']}")
     print(

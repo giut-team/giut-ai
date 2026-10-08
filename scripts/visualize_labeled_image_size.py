@@ -6,7 +6,9 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 
-DATA_PATH = Path(__file__).resolve().parents[1] / "data/train/image_blocks_261002.json"
+DATA_PATH = (
+    Path(__file__).resolve().parents[1] / "data/images/train/image_size_blocks.json"
+)
 OUTPUT_PATH = Path(__file__).resolve().with_suffix(".png")
 
 

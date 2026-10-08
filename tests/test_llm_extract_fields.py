@@ -42,11 +42,11 @@ def save_results(id, fields_result, usage, comparison, elapsed_time, path: str):
 
 
 async def test_extract_fields():
-    with open("data/test/test_blocks.json", "r") as f_blocks:
+    with open("data/text/test/html_blocks.json", "r") as f_blocks:
         blocks = json.load(f_blocks)["text"]
 
     ### 노이즈 제거 코드
-    # with open("data/test/test_labels.json", "r") as f_rel_labels:
+    # with open("data/text/test/labels.json", "r") as f_rel_labels:
     #     rel_labels = {l["id"]: l["is_relevant"] for l in json.load(f_rel_labels)}
 
     # for b in blocks[:]:
@@ -70,7 +70,7 @@ async def test_extract_fields():
         if b["page_id"] == page_id:
             page_blocks.setdefault(page_id, []).append(b)
 
-    with open("data/test/llm_answer_labels.json", "r") as f_labels:
+    with open("data/text/test/llm_answer_labels.json", "r") as f_labels:
         labels = json.load(f_labels)[: len(blocks)]
 
         page_labels = {}
@@ -116,7 +116,7 @@ async def test_pipeline():
     print("\n" + fields_result.format())
     print("elapsed_time:", elapsed_time)
 
-    with open("data/test/llm_answer_labels.json", "r") as f_labels:
+    with open("data/text/test/llm_answer_labels.json", "r") as f_labels:
         labels = json.load(f_labels)
     page_labels = {}
     for l in labels:

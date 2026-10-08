@@ -10,10 +10,9 @@ import torch
 from src.ml.text_classifier import TextClassifier, tokenize
 
 TEXT_MODELS_DIR = "models/text_classifier"
-TEXT_SCALER_PATH = os.path.join(TEXT_MODELS_DIR, "num_scaler.joblib")
-TEXT_HEAD_PATH = os.path.join(TEXT_MODELS_DIR, "text_classifier_head.pt")
-TRAIN_BLOCKS_PATH = Path("data/train/train_blocks.json")
-TRAIN_LABELS_PATH = Path("data/train/train_labels.json")
+TEXT_SCALER_PATH = TEXT_MODELS_DIR / "num_scaler.joblib"
+TEXT_HEAD_PATH = TEXT_MODELS_DIR / "text_classifier_head.pt"
+TEXT_DIR = Path("data/text/train")
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -26,10 +25,10 @@ SEED = 42
 THRESHOLD = 0.3  # irr/rel 판정 기준값
 
 
-def load_samples(
-    blocks_path: str = TRAIN_BLOCKS_PATH,
-    labels_path: str = TRAIN_LABELS_PATH,
-):
+def load_samples(text_dir: str = TEXT_DIR):
+    blocks_path = text_dir / "html_blocks.json"
+    labels_path = text_dir / "labels.json"
+
     with open(blocks_path, encoding="utf-8") as f_blocks:
         blocks = json.load(f_blocks)["text"]
 
