@@ -6,9 +6,11 @@ import joblib
 import torch
 
 from src.llm.field_extractor import extract_fields_from_text, load_page_text
-from src.ml.text_classifier import MAX_LENGTH, TextClassifier
+from src.ml.text_classifier import TextClassifier, tokenize
 from src.parsers.html_parser import HtmlParser
-from training.config import DEVICE, NUM_KEYS
+
+DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+NUM_KEYS = ["link_density", "rel_pos"]
 
 
 async def run_pipeline(url: str, use_classifier: bool = True):
@@ -51,13 +53,7 @@ async def run_pipeline(url: str, use_classifier: bool = True):
         with torch.inference_mode():
             for start in range(0, len(blocks), 64):
                 batch = blocks[start : start + 64]
-                encoded = classifier.tok(
-                    [block["text"] for block in batch],
-                    padding=True,
-                    truncation=True,
-                    max_length=MAX_LENGTH,
-                    return_tensors="pt",
-                )
+                enc = tokenize(batch)
                 # 분류기에 필요한 수치 피처를 학습 스케일로 변환
                 raw_num = [
                     [block["num_features"][key] for key in NUM_KEYS] for block in batch
@@ -67,8 +63,8 @@ async def run_pipeline(url: str, use_classifier: bool = True):
                 )
                 predictions = (
                     classifier.logits(
-                        encoded["input_ids"].to(DEVICE),
-                        encoded["attention_mask"].to(DEVICE),
+                        enc["input_ids"].to(DEVICE),
+                        enc["attention_mask"].to(DEVICE),
                         num,
                     )
                     .argmax(dim=-1)

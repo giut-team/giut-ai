@@ -6,9 +6,9 @@ from torch.utils.data import DataLoader
 from torchvision import transforms
 
 from src.ml.image_classifier import ImageClassifier
-from training.config import DEVICE
-from training.image.train import (
+from training.train_image_classifier import (
     BATCH_SIZE,
+    DEVICE,
     IMAGE_EXTENSIONS,
     IMAGENET_MEAN,
     IMAGENET_STD,
@@ -78,6 +78,10 @@ def main():
     print(
         f"confusion matrix: TP={metrics['tp']} FP={metrics['fp']} "
         f"TN={metrics['tn']} FN={metrics['fn']}"
+    )
+    print(
+        f"[test] n_rel:n_irr={(metrics['tp']+metrics['fn'])/metrics['n']}:{(metrics['fp']+metrics['tn'])/metrics['n']} "
+        f"pred_rel:pred_irr={(metrics['tp']+metrics['fp'])/metrics['n']}:{(metrics['tn']+metrics['fn'])/metrics['n']}"
     )
     print()
 
