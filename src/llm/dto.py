@@ -19,11 +19,6 @@ class TargetParticipantsEnum(Enum):
     NONE = "대학생 참여 불가능"
 
 
-class UnivStatusEnum(Enum):
-    ENROLLED = "재학생만 가능"
-    ALL = "재학생 및 휴학생 가능"
-
-
 class ActivityKindEnum(Enum):
     CONTEST = "공모전"
     COMPETITION = "경진대회"
@@ -58,7 +53,7 @@ class ExtractedFields:
     title: Optional[str]
     host_organization: Optional[str]
     target_participants: Optional[TargetParticipantsEnum]
-    univ_status: Optional[UnivStatusEnum]
+    is_for_enrolled_only: bool
     application_start_at: Optional[date]
     application_end_at: Optional[date]
     total_prize_amount: Optional[int]
@@ -90,17 +85,6 @@ class ExtractedFields:
             return TargetParticipantsEnum(value)
         except (ValueError, TypeError):
             logger.warning("LLM 응답 참가대상 값 오류: %r", value)
-            return None
-
-    @field_validator("univ_status", mode="before")
-    @classmethod
-    def _validate_target_participants(cls, value: object) -> Optional[UnivStatusEnum]:
-        if value is None:
-            return None
-        try:
-            return UnivStatusEnum(value)
-        except (ValueError, TypeError):
-            logger.warning("LLM 응답 학적 조건 값 오류: %r", value)
             return None
 
     @field_validator("activity_kind", mode="before")
