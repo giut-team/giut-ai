@@ -1,5 +1,6 @@
 import json
 import random
+import warnings
 from pathlib import Path
 
 import torch
@@ -24,8 +25,22 @@ THRESHOLD = 0.5
 NUM_WORKERS = 0
 
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".bmp"}
-IMAGENET_MEAN = (0.485, 0.456, 0.406)
-IMAGENET_STD = (0.229, 0.224, 0.225)
+IMAGENET_MEAN = (0.485, 0.456, 0.406)  # RGBA: (0.485, 0.456, 0.406, 0.0)
+IMAGENET_STD = (0.229, 0.224, 0.225)  # RGBA: (0.229, 0.224, 0.225, 1.0)
+
+
+# def is_supported_image(image_path):
+#     # Reject transparent icons and images too large for safe decoding."""
+#     try:
+#         with warnings.catch_warnings():
+#             warnings.simplefilter("ignore", Image.DecompressionBombWarning)
+#             with Image.open(image_path) as image:
+#                 if image.width * image.height > Image.MAX_IMAGE_PIXELS:
+#                     return False
+#                 return not ("A" in image.getbands() or "transparency" in image.info)
+#     except (Image.DecompressionBombError, OSError):
+#         return False
+
 
 Image.MAX_IMAGE_PIXELS = 20000 * 20000
 
@@ -144,6 +159,8 @@ def main():
 
     train_transform = transforms.Compose(
         [
+            # transforms.RandomResizedCrop(224),
+            # transforms.RandomHorizontalFlip(),
             transforms.Resize(256),
             transforms.CenterCrop(224),
             transforms.ToTensor(),
