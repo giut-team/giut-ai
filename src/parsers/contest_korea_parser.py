@@ -157,7 +157,6 @@ def parse_contest_korea_html(
     return {
         "title": _text(area.find("h1")) or _text(field("공모전명", "대회명")),
         "host_organization": _text(field("주최기관", "주최", "주최 . 주관")),
-        # "host_organization_2": _text(field("주관기관", "주관", "주최 . 주관")),
         "category": _text(field("대표분야", "카테고리", "분야")),
         "target_participants": _text(field("참가대상")),
         "application_start_at": application_start_at,
