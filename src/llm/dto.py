@@ -13,6 +13,12 @@ from typing import Optional
 logger = logging.getLogger(__name__)
 
 
+class TargetParticipantsEnum(Enum):
+    UNIV_ONLY = "대학생만 가능"
+    ALL = "대학생 및 일반인"
+    NONE = "대학생 참여 불가능"
+
+
 class ActivityKindEnum(Enum):
     CONTEST = "공모전"
     COMPETITION = "경진대회"
@@ -46,7 +52,8 @@ class CategoryEnum(Enum):
 class ExtractedFields:
     title: Optional[str]
     host_organization: Optional[str]
-    is_univ_possible: Optional[bool]
+    target_participants: Optional[TargetParticipantsEnum]
+    is_for_enrolled_only: bool
     application_start_at: Optional[date]
     application_end_at: Optional[date]
     total_prize_amount: Optional[int]
@@ -66,6 +73,19 @@ class ExtractedFields:
     @classmethod
     def to_dict(cls, data: ExtractedFields) -> dict:
         return {field.name: str(getattr(data, field.name)) for field in fields(cls)}
+
+    @field_validator("target_participants", mode="before")
+    @classmethod
+    def _validate_target_participants(
+        cls, value: object
+    ) -> Optional[TargetParticipantsEnum]:
+        if value is None:
+            return None
+        try:
+            return TargetParticipantsEnum(value)
+        except (ValueError, TypeError):
+            logger.warning("LLM 응답 참가대상 값 오류: %r", value)
+            return None
 
     @field_validator("activity_kind", mode="before")
     @classmethod
