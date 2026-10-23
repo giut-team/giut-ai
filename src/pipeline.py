@@ -27,7 +27,8 @@ async def run_pipeline(url: str, use_classifier: bool = True):
     domain = (urlparse(url).hostname or "").lower()
 
     if domain in {"contestkorea.com", "www.contestkorea.com"}:
-        page_text = parse_contest_korea(url)
+        page_text, main_image_link, detail_image_links = parse_contest_korea(url)
+        image_urls = detail_image_links.insert(0, main_image_link)
 
     elif domain == "rss.uos.ac.kr":
         page_text = parse_uos_rss(url)
@@ -112,48 +113,50 @@ async def run_pipeline(url: str, use_classifier: bool = True):
         # 텍스트만으로 모두 추출되었을 경우
         return extracted_fields
 
-    size_filtered = []
+    if image_urls == []:
+        # 픽셀 단위 면적, 브라우저 내 상대 사이즈, 종횡비 룰 기반 분류
+        size_filtered = []
+        for image in images:
+            if (
+                image["display_area"] > 400 * 400
+                and image["relative_display_area"] > 0.6
+                and 0.7 < image["display_height"] / image["display_width"] < 2.5
+            ):
+                size_filtered.append(image)
 
-    # 픽셀 단위 면적, 브라우저 내 상대 사이즈, 종횡비 룰 기반 분류
-    for image in images:
-        if (
-            image["display_area"] > 400 * 400
-            and image["relative_display_area"] > 0.6
-            and 0.7 < image["display_height"] / image["display_width"] < 2.5
-        ):
-            size_filtered.append(image)
-
-    relevant_images = []
-
-    if use_classifier:
-        cnn_model_dir = (
-            Path(__file__).resolve().parents[1] / "models" / "image_classifier"
-        )
-        classifier = ImageClassifier(n_num=len(NUM_KEYS)).to(DEVICE)
-        classifier.head.load_state_dict(
-            torch.load(
-                cnn_model_dir / "image_classifier_head.pt",
-                map_location=DEVICE,
-                weights_only=True,
+        # CNN으로 포스터 사진만 분리
+        relevant_images = []
+        if use_classifier:
+            cnn_model_dir = (
+                Path(__file__).resolve().parents[1] / "models" / "image_classifier"
             )
-        )
-        classifier.eval()
-
-        with torch.inference_mode():
-            # for image in size_filtered:
-            predictions = classifier(size_filtered).argmax(dim=-1).tolist()
-            relevant_images.extend(
-                image
-                for image, prediction in zip(batch, predictions)
-                if prediction == 1
+            classifier = ImageClassifier(n_num=len(NUM_KEYS)).to(DEVICE)
+            classifier.head.load_state_dict(
+                torch.load(
+                    cnn_model_dir / "image_classifier_head.pt",
+                    map_location=DEVICE,
+                    weights_only=True,
+                )
             )
+            classifier.eval()
 
-    image_urls = [i["src"] for i in relevant_images]
+            with torch.inference_mode():
+                predictions = classifier(size_filtered).argmax(dim=-1).tolist()
+                relevant_images.extend(
+                    image
+                    for image, prediction in zip(batch, predictions)
+                    if prediction == 1
+                )
+        else:
+            relevant_images = size_filtered
+
+        image_urls = [i["src"] for i in relevant_images]
+
     image_extracted_fields = await extract_fields_from_images(
         convert_images_to_base64(image_urls)
     )
 
-    # 이미지에서 얻은 데이터만 기존 extracted_fields에 추가
+    # TODO: 이미지에서 얻은 데이터만 기존 extracted_fields에 추가
 
     return extracted_fields
 
