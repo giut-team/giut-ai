@@ -154,26 +154,27 @@ def parse_contest_korea_html(
 
     description, detail_image_links = _detail(soup, base_url, main_image_link)
 
-    return {
-        "title": _text(area.find("h1")) or _text(field("공모전명", "대회명")),
-        "host_organization": _text(field("주최기관", "주최", "주최 . 주관")),
-        # "host_organization_2": _text(field("주관기관", "주관", "주최 . 주관")),
-        "category": _text(field("대표분야", "카테고리", "분야")),
-        "target_participants": _text(field("참가대상")),
-        "application_start_at": application_start_at,
-        "application_end_at": application_end_at,
-        "prize": _text(field("시상내역")),
-        "homepage_link": _link(field("홈페이지"), base_url),
-        "application_link": _link(field("접수하기"), base_url),
-        "description": description,
-        "main_image_link": main_image_link,
-        "detail_image_links": detail_image_links,
-    }
+    return (
+        {
+            "title": _text(area.find("h1")) or _text(field("공모전명", "대회명")),
+            "host_organization": _text(field("주최기관", "주최", "주최 . 주관")),
+            "category": _text(field("대표분야", "카테고리", "분야")),
+            "target_participants": _text(field("참가대상")),
+            "application_start_at": application_start_at,
+            "application_end_at": application_end_at,
+            "prize": _text(field("시상내역")),
+            "homepage_link": _link(field("홈페이지"), base_url),
+            "application_link": _link(field("접수하기"), base_url),
+            "description": description,
+        },
+        main_image_link,
+        detail_image_links,
+    )
 
 
 def parse_contest_korea(
     url: str, timeout: float = 30
-) -> dict[str, str | list[str] | None]:
+) -> tuple[dict[str, str | list[str] | None], str, list[str]]:
     response = requests.get(url, headers={"User-Agent": "Mozilla/5.0"}, timeout=timeout)
     response.raise_for_status()
     return parse_contest_korea_html(response.content, response.url)

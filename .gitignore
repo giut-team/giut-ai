@@ -8,4 +8,8 @@
 .env
 
 data/backup/
+data/images/test/**
+data/images/train/**
+!data/images/**/*.json
+
 *.csv
