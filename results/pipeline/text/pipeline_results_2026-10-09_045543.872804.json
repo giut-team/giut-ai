@@ -1,0 +1,37 @@
+[
+	{
+		"page_id": 7,
+		"elapsed_time": "0:00:54.821399",
+		"input_tokens": 2102,
+		"cached_input_tokens": 0,
+		"cache_rate": 0.0,
+		"output_tokens": 6185,
+		"response": {
+			"title": "2026년 정신건강의 날 기념 정신건강 캐릭터 공모전",
+			"host_organization": "전남광역정신건강복지센터",
+			"is_univ_possible": "True",
+			"application_start_at": "2026-08-20",
+			"application_end_at": "2026-09-17",
+			"total_prize_amount": "10000000",
+			"prize": "대상(디자인/캐릭터/웹툰): 100만원 / 우수상(디자인/캐릭터/웹툰): 50만원 / 참가상(디자인/캐릭터/웹툰): 5만원",
+			"activity_kind": "ActivityKindEnum.CONTEST",
+			"category": "[<CategoryEnum.DESIGN: '디자인'>, <CategoryEnum.PHOTO_CONTENTS: '사진/영상/콘텐츠'>]",
+			"is_team": "None",
+			"is_team_evidence": "None",
+			"summary": "전 국민 누구나 참여 가능한 정신건강 캐릭터 공모전으로, 대상/우수상/참가상 등 시상이 있으며 디자인/캐릭터/웹툰 분야의 캐릭터를 공모한다."
+		},
+		"comparison": {
+			"title": "EXACT",
+			"host_organization": "EXACT",
+			"is_univ_possible": "EXACT",
+			"application_start_at": "EXACT",
+			"application_end_at": "EXACT",
+			"total_prize_amount": "MISS",
+			"prize": "CLOSE",
+			"activity_kind": "EXACT",
+			"category": { "EXACT": 1, "ADDED": 1, "OMITTED": 0 },
+			"is_team": "EXACT",
+			"is_team_evidence": "EXACT"
+		}
+	}
+]

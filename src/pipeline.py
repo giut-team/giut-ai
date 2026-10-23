@@ -58,11 +58,11 @@ async def run_pipeline(url: str, use_classifier: bool = True):
             model_dir = (
                 Path(__file__).resolve().parents[1] / "models" / "text_classifier"
             )
-            scaler = joblib.load(model_dir / "num_scaler.joblib")
+            scaler = joblib.load(model_dir / "num_scaler_v1.joblib")
             classifier = TextClassifier(n_num=len(NUM_KEYS)).to(DEVICE)
             classifier.head.load_state_dict(
                 torch.load(
-                    model_dir / "text_classifier_head.pt",
+                    model_dir / "text_classifier_head_v1.pt",
                     map_location=DEVICE,
                     weights_only=True,
                 )
