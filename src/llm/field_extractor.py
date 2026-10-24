@@ -1,19 +1,11 @@
 from __future__ import annotations
 
-import base64
-from io import BytesIO
-from pathlib import Path
-import re
-import sys
-from urllib.parse import urlparse
-
 from openai.types import CompletionUsage
-import requests
-from PIL import Image
+from pydantic import BaseModel
 
 from src.llm.openai_client import create_json_completion
 from src.llm.dto import ExtractedFields
-from src.llm.prompts import OPENAI_LLM_PROMPT, OPENAI_VLM_PROMPT
+from src.llm.prompts import FIELDS_DESCRIPTION, OPENAI_LLM_PROMPT, OPENAI_VLM_PROMPT
 
 
 def load_page_text(blocks: list[dict]) -> str:
@@ -44,67 +36,28 @@ async def extract_fields_from_text(
     return (response.choices[0].message.parsed, response.usage)
 
 
-def _download_image_bytes(url: str, timeout: float = 30.0) -> bytes:
-    # HTTP(S) 이미지 주소에서 바이트 데이터 다운로드
-    parsed_url = urlparse(url)
-    if parsed_url.scheme.lower() not in {"http", "https"} or not parsed_url.netloc:
-        raise ValueError("이미지 주소가 HTTP(S) URL이 아님")
-
-    with requests.get(
-        url, headers={"User-Agent": "Mozilla/5.0"}, timeout=timeout
-    ) as response:
-        response.raise_for_status()
-        return response.content
-
-
-def convert_images_to_base64(images_paths: list[str]) -> list[str]:
-    # 로컬 이미지 파일 또는 HTTP(S) 이미지를 Base64 데이터 URL로 변환
-    mime_types = {
-        "JPEG": "image/jpeg",
-        "PNG": "image/png",
-        "WEBP": "image/webp",
-        "GIF": "image/gif",
-    }
-    data_urls: list[str] = []
-
-    for image_path in images_paths:
-        if image_path.lower().startswith(("http://", "https://")):
-            image_bytes = _download_image_bytes(image_path)
-        else:
-            image_bytes = Path(image_path).read_bytes()
-
-        with Image.open(BytesIO(image_bytes)) as image:
-            image.load()
-            mime_type = mime_types.get(image.format)
-
-            if mime_type is None:
-                # 이미지 형식이 mime_types 안에 없을 경우 PNG로 변환
-                with BytesIO() as buffer:
-                    image.convert("RGBA").save(buffer, format="PNG")
-                    image_bytes = buffer.getvalue()
-                mime_type = "image/png"
-
-        encoded = base64.b64encode(image_bytes).decode("ascii")
-        data_urls.append(f"data:{mime_type};base64,{encoded}")
-
-    return data_urls
-
-
 async def extract_fields_from_images(
-    images: list[Image.Image],
-) -> tuple[ExtractedFields, CompletionUsage]:
+    image_base64_urls: list[str], keys: list[str]
+) -> tuple[BaseModel, CompletionUsage]:
+    # 추출할 키 및 관련 설명만 기본 프롬프트에 추가
+    descriptions = [FIELDS_DESCRIPTION[key] for key in keys]
+    prompt = OPENAI_VLM_PROMPT + "\n".join(descriptions)
+
     response = await create_json_completion(
         messages=[
             {
                 "role": "developer",
-                "content": {"type": "text", "text": OPENAI_VLM_PROMPT},
+                "content": [{"type": "text", "text": prompt}],
             },
             {
                 "role": "user",
-                "content": [{"type": "image", "image_url": url} for url in images],
+                "content": [
+                    {"type": "image_url", "image_url": {"url": url}}
+                    for url in image_base64_urls
+                ],
             },
         ],
-        response_format=ExtractedFields,
+        response_format=ExtractedFields.select_fields(keys),
     )
 
     return (response.choices[0].message.parsed, response.usage)

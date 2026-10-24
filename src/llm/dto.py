@@ -5,12 +5,24 @@ import re
 import logging
 
 from dataclasses import fields
-from pydantic import field_validator
+from pydantic import BaseModel, create_model, field_validator
 from pydantic.dataclasses import dataclass
 from enum import Enum
-from typing import Optional
+from typing import Optional, get_type_hints
 
 logger = logging.getLogger(__name__)
+
+
+class _SelectedExtractedFields(BaseModel):
+    def to_dict(self) -> dict:
+        return self.model_dump()
+
+    def format(self) -> str:
+        return "".join(
+            f"{key}: {value}\n"
+            for key, value in self.to_dict().items()
+            if value is not None
+        )
 
 
 class TargetParticipantsEnum(Enum):
@@ -53,7 +65,7 @@ class ExtractedFields:
     title: Optional[str]
     host_organization: Optional[str]
     target_participants: Optional[TargetParticipantsEnum]
-    is_for_enrolled_only: bool
+    is_for_enrolled_only: Optional[bool]
     application_start_at: Optional[date]
     application_end_at: Optional[date]
     total_prize_amount: Optional[int]
@@ -65,14 +77,40 @@ class ExtractedFields:
     summary: Optional[str] = None
 
     @classmethod
+    def select_fields(cls, keys: list[str]) -> type[_SelectedExtractedFields]:
+        field_types = get_type_hints(cls)
+        if not keys or len(keys) != len(set(keys)):
+            raise ValueError("필드 이름을 중복 없이 하나 이상 지정해야 합니다")
+        unknown = set(keys) - field_types.keys()
+        if unknown:
+            raise ValueError(f"정의되지 않은 필드: {', '.join(sorted(unknown))}")
+
+        validators = {}
+        for key, name in (
+            ("target_participants", "_validate_target_participants"),
+            ("activity_kind", "_validate_activity_kind"),
+            ("category", "_validate_category"),
+        ):
+            if key in keys:
+                validators[name] = field_validator(key, mode="before")(
+                    getattr(cls, name).__func__
+                )
+
+        return create_model(
+            f"{cls.__name__}Subset",
+            __base__=_SelectedExtractedFields,
+            __validators__=validators,
+            **{key: (field_types[key], ...) for key in keys},
+        )
+
+    @classmethod
     def from_dict(cls, data: dict) -> ExtractedFields:
         # data 객체 내에 정의되지 않은 키가 있으면 무시
         known = {f.name for f in fields(cls)}
         return cls(**{k: v for k, v in data.items() if k in known})
 
-    @classmethod
-    def to_dict(cls, data: ExtractedFields) -> dict:
-        return {field.name: str(getattr(data, field.name)) for field in fields(cls)}
+    def to_dict(self) -> dict:
+        return {field.name: getattr(self, field.name) for field in fields(self)}
 
     @field_validator("target_participants", mode="before")
     @classmethod

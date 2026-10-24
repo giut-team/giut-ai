@@ -1,13 +1,13 @@
 from datetime import datetime
+from io import BytesIO
 from pathlib import Path
 from urllib.parse import urlparse
 
 import joblib
 import torch
+from PIL import Image
 
-from src.llm.dto import ExtractedFields
 from src.llm.field_extractor import (
-    convert_images_to_base64,
     extract_fields_from_images,
     extract_fields_from_text,
     load_page_text,
@@ -17,9 +17,16 @@ from src.ml.text_classifier import TextClassifier, tokenize
 from src.parsers.html_parser import HtmlParser
 from src.parsers.contest_korea_parser import parse_contest_korea
 from src.parsers.uos_rss_parser import parse_uos_rss
+from src.utils.image_utils import download_image_bytes
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 NUM_KEYS = ["link_density", "rel_pos"]
+
+
+def download_image(url: str) -> Image.Image:
+    image = Image.open(BytesIO(download_image_bytes(url)))
+    image.load()
+    return image
 
 
 async def run_pipeline(url: str, use_classifier: bool = True):
@@ -39,15 +46,17 @@ async def run_pipeline(url: str, use_classifier: bool = True):
             blocks = parsed_data.text
             images = parsed_data.images
             links = parsed_data.links
+        image_urls = []
 
         ##### 파싱 결과 기록
         # start_at = datetime.now()
         # with open(
-        #     f"results/html_extracted_blocks_{str(start_at).replace(" ","_").replace(":","")}.json",
+        #     f"results/html_extracted_blocks_{str(start_at).replace(" ","_").replace(":","").replace(r"\.\d+","")}.json",
         #     "w",
         # ) as f:
         #     import json
-        #     json.dump(blocks, f, ensure_ascii=False)
+
+        #     json.dump([parsed_data.text, parsed_data.images], f, ensure_ascii=False)
         #####
 
         relevant_blocks = []
@@ -100,16 +109,31 @@ async def run_pipeline(url: str, use_classifier: bool = True):
 
         ##### 분류기 결과 기록
         # with open(
-        #     f"results/relevant_page_text_{str(start_at).replace(" ","_").replace(":","")}.txt",
+        #     f"results/relevant_page_text_{str(start_at).replace(" ","_").replace(":","").replace(r"\.\d+","")}.txt",
         #     "w",
         # ) as f2:
         #     f2.write(page_text)
         #####
 
-    extracted_fields = await extract_fields_from_text(page_text)
-    extracted_fields = ExtractedFields.to_dict(extracted_fields)
+    extracted_fields, usage = await extract_fields_from_text(page_text)
+    extracted_fields = extracted_fields.to_dict()
 
-    if all(extracted_fields.values()) is not None:
+    print()
+    print("Text:")
+    print(*(f"{k}: {v}\n" for k, v in extracted_fields.items()))
+    print()
+
+    extract_failed_keys = []
+    for key, value in extracted_fields.items():
+        if value is None:
+            extract_failed_keys.append(key)
+
+    print("Extract Failed Keys:")
+    print(*extract_failed_keys)
+    print()
+
+    # if all(extracted_fields.values()) is not None:
+    if extract_failed_keys == []:
         # 텍스트만으로 모두 추출되었을 경우
         return extracted_fields
 
@@ -117,23 +141,28 @@ async def run_pipeline(url: str, use_classifier: bool = True):
         # 픽셀 단위 면적, 브라우저 내 상대 사이즈, 종횡비 룰 기반 분류
         size_filtered = []
         for image in images:
+            size = image["size"]
             if (
-                image["display_area"] > 400 * 400
-                and image["relative_display_area"] > 0.6
-                and 0.7 < image["display_height"] / image["display_width"] < 2.5
+                size["display_area"] > 400 * 400
+                and size["relative_display_area"] > 0.6
+                and size["display_height"] / size["display_width"] > 0.7
             ):
                 size_filtered.append(image)
 
+        print("Size filtered images:")
+        print(*(image["src"] for image in size_filtered), sep="\n")
+        print()
+
         # CNN으로 포스터 사진만 분리
         relevant_images = []
-        if use_classifier:
+        if size_filtered and use_classifier:
             cnn_model_dir = (
                 Path(__file__).resolve().parents[1] / "models" / "image_classifier"
             )
-            classifier = ImageClassifier(n_num=len(NUM_KEYS)).to(DEVICE)
-            classifier.head.load_state_dict(
+            classifier = ImageClassifier().to(DEVICE)
+            classifier.model.load_state_dict(
                 torch.load(
-                    cnn_model_dir / "image_classifier_head.pt",
+                    cnn_model_dir / "image_classifier.pt",
                     map_location=DEVICE,
                     weights_only=True,
                 )
@@ -141,10 +170,15 @@ async def run_pipeline(url: str, use_classifier: bool = True):
             classifier.eval()
 
             with torch.inference_mode():
-                predictions = classifier(size_filtered).argmax(dim=-1).tolist()
+                downloaded_images = [
+                    download_image(image["src"]) for image in size_filtered
+                ]
+                predictions = (
+                    classifier.logits(downloaded_images).sigmoid() >= 0.5
+                ).tolist()
                 relevant_images.extend(
                     image
-                    for image, prediction in zip(batch, predictions)
+                    for image, prediction in zip(size_filtered, predictions)
                     if prediction == 1
                 )
         else:
@@ -152,11 +186,29 @@ async def run_pipeline(url: str, use_classifier: bool = True):
 
         image_urls = [i["src"] for i in relevant_images]
 
-    image_extracted_fields = await extract_fields_from_images(
-        convert_images_to_base64(image_urls)
-    )
+        ##### 이미지 분류기 결과 기록
+        # with open(
+        #     f"results/relevant_images_{str(start_at).replace(" ","_").replace(":","").replace(r"\.\d+","")}.txt",
+        #     "w",
+        # ) as f3:
+        #     for url in image_urls:
+        #         f3.write(url)
+        #####
 
-    # TODO: 이미지에서 얻은 데이터만 기존 extracted_fields에 추가
+    if image_urls:
+        image_extracted_fields, usage = await extract_fields_from_images(
+            image_urls, extract_failed_keys
+        )
+        image_extracted_fields = image_extracted_fields.to_dict()
+
+        # 이미지에서 추출에 성공한 데이터만 기존 extracted_fields에 추가
+        for key, value in image_extracted_fields.items():
+            if value is not None:
+                extracted_fields[key] = value
+
+        print("Images:")
+        print(*(f"{k}: {v}\n" for k, v in extracted_fields.items()))
+        print()
 
     return extracted_fields
 
