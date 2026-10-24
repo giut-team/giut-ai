@@ -6,7 +6,6 @@ from pathlib import Path
 import torch
 from PIL import Image
 from torch.utils.data import DataLoader, Dataset
-from torchvision import transforms
 
 from src.ml.image_classifier import ImageClassifier
 
@@ -25,10 +24,6 @@ THRESHOLD = 0.5
 NUM_WORKERS = 0
 
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".bmp"}
-IMAGENET_MEAN = (0.485, 0.456, 0.406)  # RGBA: (0.485, 0.456, 0.406, 0.0)
-IMAGENET_STD = (0.229, 0.224, 0.225)  # RGBA: (0.229, 0.224, 0.225, 1.0)
-
-
 # def is_supported_image(image_path):
 #     # Reject transparent icons and images too large for safe decoding."""
 #     try:
@@ -46,9 +41,8 @@ Image.MAX_IMAGE_PIXELS = 20000 * 20000
 
 
 class ImageDataset(Dataset):
-    def __init__(self, samples, transform):
+    def __init__(self, samples):
         self.samples = samples
-        self.transform = transform
 
     def __len__(self):
         return len(self.samples)
@@ -56,8 +50,7 @@ class ImageDataset(Dataset):
     def __getitem__(self, index):
         image_path, label = self.samples[index]
         with Image.open(image_path) as image:
-            image = image.convert("RGB")
-            image = self.transform(image)
+            image = ImageClassifier.preprocess(image)
         return image, torch.tensor(label, dtype=torch.float32)
 
 
@@ -157,34 +150,15 @@ def main():
     train_samples, val_samples = split_samples(samples)
     print(f"train={len(train_samples)} val={len(val_samples)}")
 
-    train_transform = transforms.Compose(
-        [
-            # transforms.RandomResizedCrop(224),
-            # transforms.RandomHorizontalFlip(),
-            transforms.Resize(256),
-            transforms.CenterCrop(224),
-            transforms.ToTensor(),
-            transforms.Normalize(IMAGENET_MEAN, IMAGENET_STD),
-        ]
-    )
-    val_transform = transforms.Compose(
-        [
-            transforms.Resize(256),
-            transforms.CenterCrop(224),
-            transforms.ToTensor(),
-            transforms.Normalize(IMAGENET_MEAN, IMAGENET_STD),
-        ]
-    )
-
     train_loader = DataLoader(
-        ImageDataset(train_samples, train_transform),
+        ImageDataset(train_samples),
         batch_size=BATCH_SIZE,
         shuffle=True,
         num_workers=NUM_WORKERS,
         pin_memory=DEVICE.type == "cuda",
     )
     val_loader = DataLoader(
-        ImageDataset(val_samples, val_transform),
+        ImageDataset(val_samples),
         batch_size=BATCH_SIZE,
         shuffle=False,
         num_workers=NUM_WORKERS,
