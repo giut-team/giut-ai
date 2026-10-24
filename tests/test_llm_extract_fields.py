@@ -26,7 +26,7 @@ def make_result_block(id, fields_result, usage, comparison, elapsed_time):
         "cached_input_tokens": cached_input_tokens,
         "cache_rate": cached_input_tokens / input_tokens,
         "output_tokens": output_tokens,
-        "response": fields_result,
+        "response": {k: str(v) for k, v in fields_result.items()},
         "comparison": comparison,
     }
 

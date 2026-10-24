@@ -53,7 +53,7 @@ async def run_pipeline(url: str, use_classifier: bool = True):
 
         relevant_blocks = []
         if blocks is None or len(blocks) == 0:
-            return None
+            return None, None
 
         if use_classifier:
             model_dir = (
@@ -186,7 +186,7 @@ async def run_pipeline(url: str, use_classifier: bool = True):
         #         f3.write(url)
         #####
 
-    if image_urls:
+    if image_urls != []:
         image_extracted_fields, usage = await extract_fields_from_images(
             image_urls, extract_failed_keys
         )
