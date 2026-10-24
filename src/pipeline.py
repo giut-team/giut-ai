@@ -1,11 +1,9 @@
 from datetime import datetime
-from io import BytesIO
 from pathlib import Path
 from urllib.parse import urlparse
 
 import joblib
 import torch
-from PIL import Image
 
 from src.llm.field_extractor import (
     extract_fields_from_images,
@@ -17,16 +15,10 @@ from src.ml.text_classifier import TextClassifier, tokenize
 from src.parsers.html_parser import HtmlParser
 from src.parsers.contest_korea_parser import parse_contest_korea
 from src.parsers.uos_rss_parser import parse_uos_rss
-from src.utils.image_utils import download_image_bytes
+from src.utils.image_utils import download_image
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 NUM_KEYS = ["link_density", "rel_pos"]
-
-
-def download_image(url: str) -> Image.Image:
-    image = Image.open(BytesIO(download_image_bytes(url)))
-    image.load()
-    return image
 
 
 async def run_pipeline(url: str, use_classifier: bool = True):
@@ -118,26 +110,25 @@ async def run_pipeline(url: str, use_classifier: bool = True):
     extracted_fields, usage = await extract_fields_from_text(page_text)
     extracted_fields = extracted_fields.to_dict()
 
-    print()
-    print("Text:")
-    print(*(f"{k}: {v}\n" for k, v in extracted_fields.items()))
-    print()
+    # print()
+    # print("Text:")
+    # print(*(f"{k}: {v}\n" for k, v in extracted_fields.items()))
+    # print()
 
     extract_failed_keys = []
     for key, value in extracted_fields.items():
         if value is None:
             extract_failed_keys.append(key)
 
-    print("Extract Failed Keys:")
-    print(*extract_failed_keys)
-    print()
-
-    # if all(extracted_fields.values()) is not None:
     if extract_failed_keys == []:
         # 텍스트만으로 모두 추출되었을 경우
-        return extracted_fields
+        return extracted_fields, usage
 
-    if image_urls == []:
+    # print("Extract Failed Keys:")
+    # print(*extract_failed_keys)
+    # print()
+
+    if images != [] and image_urls == []:
         # 픽셀 단위 면적, 브라우저 내 상대 사이즈, 종횡비 룰 기반 분류
         size_filtered = []
         for image in images:
@@ -149,13 +140,13 @@ async def run_pipeline(url: str, use_classifier: bool = True):
             ):
                 size_filtered.append(image)
 
-        print("Size filtered images:")
-        print(*(image["src"] for image in size_filtered), sep="\n")
-        print()
+        # print("Size filtered images:")
+        # print(*(image["src"] for image in size_filtered), sep="\n")
+        # print()
 
         # CNN으로 포스터 사진만 분리
         relevant_images = []
-        if size_filtered and use_classifier:
+        if size_filtered != [] and use_classifier:
             cnn_model_dir = (
                 Path(__file__).resolve().parents[1] / "models" / "image_classifier"
             )
@@ -206,11 +197,11 @@ async def run_pipeline(url: str, use_classifier: bool = True):
             if value is not None:
                 extracted_fields[key] = value
 
-        print("Images:")
-        print(*(f"{k}: {v}\n" for k, v in extracted_fields.items()))
-        print()
+        # print("Images:")
+        # print(*(f"{k}: {v}\n" for k, v in extracted_fields.items()))
+        # print()
 
-    return extracted_fields
+    return extracted_fields, usage
 
 
 if __name__ == "__main__":

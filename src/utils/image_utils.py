@@ -6,7 +6,7 @@ from PIL import Image
 import requests
 
 
-def download_image_bytes(url: str, timeout: float = 30.0) -> bytes:
+def download_image(url: str, timeout: float = 30.0) -> Image:
     # HTTP(S) 이미지 주소에서 바이트 데이터 다운로드
     parsed_url = urlparse(url)
     if parsed_url.scheme.lower() not in {"http", "https"} or not parsed_url.netloc:
@@ -16,7 +16,11 @@ def download_image_bytes(url: str, timeout: float = 30.0) -> bytes:
         url, headers={"User-Agent": "Mozilla/5.0"}, timeout=timeout
     ) as response:
         response.raise_for_status()
-        return response.content
+        bytes = response.content
+
+    with Image.open(BytesIO(bytes)) as image:
+        image.load()
+        return image
 
 
 def _convert_image_to_base64(image_path: str) -> str:
@@ -29,12 +33,12 @@ def _convert_image_to_base64(image_path: str) -> str:
     }
 
     if image_path.lower().startswith(("http://", "https://")):
-        image_bytes = download_image_bytes(image_path)
+        image = download_image(image_path)
     else:
         image_bytes = Path(image_path).read_bytes()
-
-    with Image.open(BytesIO(image_bytes)) as image:
+        image = Image.open(BytesIO(image_bytes))
         image.load()
+
         mime_type = mime_types.get(image.format)
 
         if mime_type is None:

@@ -26,7 +26,7 @@ def make_result_block(id, fields_result, usage, comparison, elapsed_time):
         "cached_input_tokens": cached_input_tokens,
         "cache_rate": cached_input_tokens / input_tokens,
         "output_tokens": output_tokens,
-        "response": ExtractedFields.to_dict(fields_result),
+        "response": fields_result,
         "comparison": comparison,
     }
 
@@ -91,7 +91,7 @@ async def test_extract_fields():
 
             result = make_result_block(
                 id=id,
-                fields_result=fields_result,
+                fields_result=fields_result.to_dict(),
                 usage=usage,
                 comparison=comparison,
                 elapsed_time=elapsed_time,
@@ -117,7 +117,8 @@ async def test_pipeline():
     ended_at = datetime.now()
     elapsed_time = ended_at - started_at
 
-    print("\n" + fields_result.format())
+    print()
+    print(*(f"{k}: {v}\n" for k, v in fields_result.items()))
     print("elapsed_time:", elapsed_time)
 
     with open("data/text/test/llm_answer_labels.json", "r") as f_labels:
@@ -126,7 +127,7 @@ async def test_pipeline():
     for l in labels:
         page_labels[l["page_id"]] = l
 
-    comparison = fields_result.compare(
+    comparison = ExtractedFields.from_dict(fields_result).compare(
         ExtractedFields.from_dict(page_labels[TEST_PAGE_ID])
     )
 
@@ -138,6 +139,6 @@ async def test_pipeline():
         elapsed_time=elapsed_time,
     )
 
-    path = f"results/pipeline/text/pipeline_results_{str(started_at).replace(" ", "_").replace(":", "")}.json"
+    path = f"results/pipeline/pipeline_results_{str(started_at).replace(" ", "_").replace(":", "")}.json"
     with open(path, "w") as f_result:
         json.dump(result, f_result, ensure_ascii=False)
