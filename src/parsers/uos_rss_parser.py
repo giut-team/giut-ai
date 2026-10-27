@@ -6,9 +6,6 @@ import feedparser
 import requests
 from bs4 import BeautifulSoup
 
-RSS_URL_GENERAL = "https://www.uos.ac.kr/rss/gBoard.do"
-RSS_URL_HAKSA = "https://www.uos.ac.kr/rss/hBoard.do"
-
 
 def _html_to_text(html: str) -> str:
     soup = BeautifulSoup(html, "html.parser")
@@ -29,9 +26,7 @@ def _extract_image_sources(html: str) -> list[str]:
     ]
 
 
-def parse_uos_rss(
-    url: str = RSS_URL_GENERAL, timeout: float = 30
-) -> list[dict[str, str | list[str]]]:
+def parse_uos_rss(url: str, timeout: float = 30) -> list[dict[str, str | list[str]]]:
     response = requests.get(
         url,
         headers={
@@ -60,4 +55,10 @@ def parse_uos_rss(
 
 
 if __name__ == "__main__":
-    print(json.dumps(parse_uos_rss(), ensure_ascii=False, indent=2))
+    print(
+        json.dumps(
+            parse_uos_rss("https://www.uos.ac.kr/rss/gBoard.do"),
+            ensure_ascii=False,
+            indent=2,
+        )
+    )
