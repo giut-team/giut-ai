@@ -132,7 +132,6 @@ def _detail(
 
 def _target_participants(target_text: str) -> str:
     target_list = [t.strip() for t in target_text.split(",")]
-    print(target_list)
     if all(target in {"대학생", "대학원생"} for target in target_list):
         return TargetParticipantsEnum.UNIV_ONLY.value
     elif any(target in {"누구나", "대학생", "일반인"} for target in target_list):
@@ -211,27 +210,25 @@ def parse_contest_korea_html(
 
     full_text, detail_image_links = _detail(soup, base_url, main_image_link)
 
-    return (
-        {
-            "title": title,
-            "host_organization": _text(field("주최기관", "주최", "주최 . 주관")),
-            "target_participants": target_participants,
-            "is_for_enrolled_only": (
-                target_participants == TargetParticipantsEnum.UNIV_ONLY.value
-            ),
-            "activity_kind": _activity_kind(title, collect_source),
-            "category": _category(category, collect_source),
-            "application_start_at": application_start_at,
-            "application_end_at": application_end_at,
-            "total_prize_amount": _total_prize_amount(prize),
-            "prize": prize,
-            "full_text": full_text,
-            "main_image_link": main_image_link,
-            "detail_image_links": detail_image_links,
-            "homepage_link": _link(field("홈페이지"), base_url),
-            "application_link": _link(field("접수하기"), base_url),
-        },
-    )
+    return {
+        "title": title,
+        "host_organization": _text(field("주최기관", "주최", "주최 . 주관")),
+        "target_participants": target_participants,
+        "is_for_enrolled_only": (
+            target_participants == TargetParticipantsEnum.UNIV_ONLY.value
+        ),
+        "activity_kind": _activity_kind(title, collect_source),
+        "category": _category(category, collect_source),
+        "application_start_at": application_start_at,
+        "application_end_at": application_end_at,
+        "total_prize_amount": _total_prize_amount(prize),
+        "prize": prize,
+        "full_text": full_text,
+        "main_image_link": main_image_link,
+        "detail_image_links": detail_image_links,
+        "homepage_link": _link(field("홈페이지"), base_url),
+        "application_link": _link(field("접수하기"), base_url),
+    }
 
 
 def parse_contest_korea(

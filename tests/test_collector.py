@@ -57,7 +57,14 @@ def test_collect_uos_fetches_feeds_and_extracts_pages_concurrently(monkeypatch):
         if len(extraction_started) == 2:
             both_started.set()
         await both_started.wait()
-        return SimpleNamespace(to_dict=lambda: {"title": text}), None
+        return SimpleNamespace(
+            to_dict=lambda: {
+                "title": text,
+                "target_participants": "대학생만 가능",
+                "activity_kind": "공모전",
+                "is_team": True,
+            }
+        ), None
 
     monkeypatch.setattr(collector, "parse_uos_rss", fake_parse_uos_rss)
     monkeypatch.setattr(
@@ -66,7 +73,11 @@ def test_collect_uos_fetches_feeds_and_extracts_pages_concurrently(monkeypatch):
 
     results = asyncio.run(asyncio.wait_for(collector.collect_uos(), 5))
 
-    assert results == [{"title": "general\nbody"}, {"title": "haksa\nbody"}]
+    assert [result["title"] for result in results] == [
+        "general\nbody",
+        "haksa\nbody",
+    ]
+    assert all(result["is_team"] for result in results)
 
 
 def test_collect_contest_korea_filters_yesterday_across_pages(monkeypatch):
@@ -120,11 +131,15 @@ def test_collect_contest_korea_filters_yesterday_across_pages(monkeypatch):
 
     def fake_parse(url):
         parsed.append(url)
-        return {"title": url.rsplit("=", 1)[-1]}, None, "poster.jpg", []
+        return {"title": url.rsplit("=", 1)[-1]}
+
+    async def fake_extract_page(page, semaphore):
+        return page
 
     monkeypatch.setattr(collector, "datetime", FakeDateTime)
     monkeypatch.setattr(collector.requests, "get", fake_get)
     monkeypatch.setattr(collector, "parse_contest_korea", fake_parse)
+    monkeypatch.setattr(collector, "_extract_contest_korea_page", fake_extract_page)
 
     results = asyncio.run(collector.collect_contest_korea())
 

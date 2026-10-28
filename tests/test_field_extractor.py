@@ -3,7 +3,7 @@ import json
 
 import pytest
 
-from services.extraction import load_page_text, run_pipeline
+from src.services.extraction import load_page_text, run_pipeline
 from src.llm.dto import ExtractedFields
 from src.llm.field_extractor import (
     extract_fields_from_text,

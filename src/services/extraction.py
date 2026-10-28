@@ -136,6 +136,7 @@ async def run_pipeline(url: str, use_classifier: bool = True):
     # URL의 텍스트 블록 중 relevant 본문을 모아 필드 추출 결과와 토큰 사용량 반환
     domain = (urlparse(url).hostname or "").lower()
 
+    # TODO: 각각 전용 extract 함수 연결하기
     if domain in {"contestkorea.com", "www.contestkorea.com"}:
         page_text, main_image_link, detail_image_links = parse_contest_korea(url)
         image_urls = detail_image_links.insert(0, main_image_link)

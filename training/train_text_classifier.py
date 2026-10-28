@@ -9,7 +9,7 @@ import torch
 
 from src.ml.text_classifier import TextClassifier, tokenize
 
-TEXT_MODELS_DIR = "models/text_classifier"
+TEXT_MODELS_DIR = Path("models/text_classifier")
 TEXT_SCALER_PATH = TEXT_MODELS_DIR / "num_scaler.joblib"
 TEXT_HEAD_PATH = TEXT_MODELS_DIR / "text_classifier_head.pt"
 TEXT_DIR = Path("data/text/train")

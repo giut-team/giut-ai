@@ -3,7 +3,7 @@ from io import BytesIO
 from pathlib import Path
 from PIL import Image
 
-from services.extraction import download_image
+from src.services.extraction import download_image
 
 
 def _convert_image_to_base64(image_path: str) -> str:
