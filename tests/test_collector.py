@@ -159,7 +159,7 @@ def test_daily_collector_waits_until_seoul_midnight(monkeypatch):
     monkeypatch.setattr(collector.asyncio, "sleep", fake_sleep)
 
     with pytest.raises(asyncio.CancelledError):
-        asyncio.run(collector.run_daily_uos_collector("test-token"))
+        asyncio.run(collector.run_daily_collector("test-token"))
 
     assert delays == [60]
 

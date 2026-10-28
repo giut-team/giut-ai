@@ -1,22 +1,10 @@
 from __future__ import annotations
 
 from openai.types import CompletionUsage
-from pydantic import BaseModel
 
 from src.llm.openai_client import create_json_completion
 from src.llm.dto import ExtractedFields
 from src.llm.prompts import FIELDS_DESCRIPTION, OPENAI_LLM_PROMPT, OPENAI_VLM_PROMPT
-
-
-def load_page_text(blocks: list[dict]) -> str:
-    page_text = ""
-
-    for b in blocks:
-        block_text = b.get("text", None)
-        if block_text is not None:
-            page_text += block_text + "\n"
-
-    return page_text
 
 
 async def extract_fields_from_text(

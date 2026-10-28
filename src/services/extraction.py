@@ -7,14 +7,13 @@ import joblib
 import requests
 import torch
 
-from llm.dto import ExtractedFields
+from src.llm.dto import TargetParticipantsEnum
 from src.llm.field_extractor import extract_fields_from_images, extract_fields_from_text
 from src.ml.image_classifier import ImageClassifier
 from src.ml.text_classifier import TextClassifier, tokenize
 from src.parsers.html_parser import HtmlParser
 from src.parsers.contest_korea_parser import parse_contest_korea
 from src.parsers.uos_rss_parser import parse_uos_rss
-from src.utils.image_utils import download_image
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 NUM_KEYS = ["link_density", "rel_pos"]
@@ -29,6 +28,23 @@ def load_page_text(blocks: list[dict]) -> str:
             page_text += block_text + "\n"
 
     return page_text
+
+
+def is_eligible_activity(extracted_fields: dict) -> bool:
+    # 참여할 수 없는 활동이거나 팀 참가가 불가능한지 확인
+    target_participants = extracted_fields.get("target_participants", None)
+    activity_kind = extracted_fields.get("activity_kind", None)
+    is_team = extracted_fields.get("is_team", None)
+
+    if (
+        target_participants is None
+        or target_participants == TargetParticipantsEnum.NONE.value
+        or activity_kind is None
+        or is_team == False
+    ):
+        return False
+
+    return True
 
 
 def download_image(url: str, timeout: float = 30.0) -> Image:
@@ -46,19 +62,6 @@ def download_image(url: str, timeout: float = 30.0) -> Image:
     with Image.open(BytesIO(bytes)) as image:
         image.load()
         return image
-
-
-def find_missing_keys(
-    extracted_fields: dict[str, object] | ExtractedFields,
-) -> list[str]:
-    if isinstance(extracted_fields, ExtractedFields):
-        extracted_fields = extracted_fields.to_dict()
-
-    missing_keys = []
-    for key, value in extracted_fields.items():
-        if value is None:
-            missing_keys.append(key)
-    return missing_keys
 
 
 def run_text_classifier(text_blocks: list[dict]):
@@ -158,7 +161,8 @@ async def run_pipeline(url: str, use_classifier: bool = True):
     extracted_fields, usage = await extract_fields_from_text(page_text)
     extracted_fields = extracted_fields.to_dict()
 
-    missing_keys = find_missing_keys(extracted_fields)
+    missing_keys = [key for key, value in extracted_fields.items() if value is None]
+
     if missing_keys == []:
         # 텍스트만으로 모두 추출되었을 경우
         return extracted_fields, usage
