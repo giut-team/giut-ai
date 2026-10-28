@@ -1,26 +1,9 @@
 import base64
 from io import BytesIO
 from pathlib import Path
-from urllib.parse import urlparse
 from PIL import Image
-import requests
 
-
-def download_image(url: str, timeout: float = 30.0) -> Image:
-    # HTTP(S) 이미지 주소에서 바이트 데이터 다운로드
-    parsed_url = urlparse(url)
-    if parsed_url.scheme.lower() not in {"http", "https"} or not parsed_url.netloc:
-        raise ValueError("이미지 주소가 HTTP(S) URL이 아님")
-
-    with requests.get(
-        url, headers={"User-Agent": "Mozilla/5.0"}, timeout=timeout
-    ) as response:
-        response.raise_for_status()
-        bytes = response.content
-
-    with Image.open(BytesIO(bytes)) as image:
-        image.load()
-        return image
+from services.extraction import download_image
 
 
 def _convert_image_to_base64(image_path: str) -> str:

@@ -17,7 +17,7 @@ def _json_default(value: Any) -> Any:
 
 
 def post_competition(
-    extracted_fields: Mapping[str, Any],
+    extracted_fields: Mapping[str, Any] | list[Mapping[str, Any]],
     bearer_token: str,
     *,
     timeout: float = 10.0,
@@ -26,7 +26,11 @@ def post_competition(
     if not bearer_token or not bearer_token.strip():
         raise ValueError("bearer_token must be provided")
 
-    payload = json.loads(json.dumps(dict(extracted_fields), default=_json_default))
+    if isinstance(extracted_fields, list):
+        fields = [dict(item) for item in extracted_fields]
+    else:
+        fields = dict(extracted_fields)
+    payload = json.loads(json.dumps(fields, default=_json_default))
     response = requests.post(
         COMPETITIONS_URL,
         json=payload,

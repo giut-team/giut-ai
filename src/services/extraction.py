@@ -1,16 +1,14 @@
-from datetime import datetime
+from io import BytesIO
 from pathlib import Path
 from urllib.parse import urlparse
 
+from PIL import Image
 import joblib
+import requests
 import torch
 
 from llm.dto import ExtractedFields
-from src.llm.field_extractor import (
-    extract_fields_from_images,
-    extract_fields_from_text,
-    load_page_text,
-)
+from src.llm.field_extractor import extract_fields_from_images, extract_fields_from_text
 from src.ml.image_classifier import ImageClassifier
 from src.ml.text_classifier import TextClassifier, tokenize
 from src.parsers.html_parser import HtmlParser
@@ -20,6 +18,34 @@ from src.utils.image_utils import download_image
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 NUM_KEYS = ["link_density", "rel_pos"]
+
+
+def load_page_text(blocks: list[dict]) -> str:
+    page_text = ""
+
+    for b in blocks:
+        block_text = b.get("text", None)
+        if block_text is not None:
+            page_text += block_text + "\n"
+
+    return page_text
+
+
+def download_image(url: str, timeout: float = 30.0) -> Image:
+    # HTTP(S) 이미지 주소에서 바이트 데이터 다운로드
+    parsed_url = urlparse(url)
+    if parsed_url.scheme.lower() not in {"http", "https"} or not parsed_url.netloc:
+        raise ValueError("이미지 주소가 HTTP(S) URL이 아님")
+
+    with requests.get(
+        url, headers={"User-Agent": "Mozilla/5.0"}, timeout=timeout
+    ) as response:
+        response.raise_for_status()
+        bytes = response.content
+
+    with Image.open(BytesIO(bytes)) as image:
+        image.load()
+        return image
 
 
 def find_missing_keys(
