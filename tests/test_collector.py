@@ -47,10 +47,44 @@ def test_collect_uos_fetches_feeds_and_extracts_pages_concurrently(monkeypatch):
     extraction_started = []
     both_started = asyncio.Event()
 
+    class FakeDateTime(datetime):
+        @classmethod
+        def now(cls, tz=None):
+            return cls(2026, 10, 29, 12, 0, tzinfo=tz)
+
     def fake_parse_uos_rss(url):
         feed_barrier.wait(timeout=3)
         title = "general" if url == collector.UOS_RSS_GENERAL else "haksa"
-        return [{"title": title, "body": "body", "images": []}]
+        published_date = (
+            "Wed, 28 Oct 2026 09:00:00 +0900"
+            if title == "general"
+            else "Tue, 27 Oct 2026 16:30:00 +0000"
+        )
+        excluded_date = (
+            "Thu, 29 Oct 2026 09:00:00 +0900"
+            if title == "general"
+            else "Tue, 27 Oct 2026 09:00:00 +0900"
+        )
+        return [
+            {
+                "title": title,
+                "body": "body",
+                "images": [],
+                "published_date": published_date,
+            },
+            {
+                "title": "excluded",
+                "body": "body",
+                "images": [],
+                "published_date": excluded_date,
+            },
+            {
+                "title": "undated",
+                "body": "body",
+                "images": [],
+                "published_date": "",
+            },
+        ]
 
     async def fake_extract_fields_from_text(text):
         extraction_started.append(text)
@@ -66,6 +100,7 @@ def test_collect_uos_fetches_feeds_and_extracts_pages_concurrently(monkeypatch):
             }
         ), None
 
+    monkeypatch.setattr(collector, "datetime", FakeDateTime)
     monkeypatch.setattr(collector, "parse_uos_rss", fake_parse_uos_rss)
     monkeypatch.setattr(
         collector, "extract_fields_from_text", fake_extract_fields_from_text
@@ -78,6 +113,7 @@ def test_collect_uos_fetches_feeds_and_extracts_pages_concurrently(monkeypatch):
         "haksa\nbody",
     ]
     assert all(result["is_team"] for result in results)
+    assert extraction_started == ["general\nbody", "haksa\nbody"]
 
 
 def test_collect_contest_korea_filters_yesterday_across_pages(monkeypatch):

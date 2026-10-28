@@ -2,6 +2,7 @@ import asyncio
 import logging
 import os
 from datetime import date, datetime, time, timedelta
+from email.utils import parsedate_to_datetime
 from urllib.parse import parse_qs, urljoin, urlparse
 from zoneinfo import ZoneInfo
 
@@ -36,6 +37,22 @@ SEOUL_TIMEZONE = ZoneInfo("Asia/Seoul")
 logger = logging.getLogger(__name__)
 
 
+def _published_on_date(page: dict, target_date: date) -> bool:
+    published_date = page.get("published_date", "")
+    try:
+        try:
+            published_at = parsedate_to_datetime(published_date)
+        except ValueError:
+            published_at = datetime.fromisoformat(published_date)
+    except (TypeError, ValueError):
+        logger.warning("시립대 RSS 게시일을 읽을 수 없음: %r", published_date)
+        return False
+
+    if published_at.tzinfo is None:
+        published_at = published_at.replace(tzinfo=SEOUL_TIMEZONE)
+    return published_at.astimezone(SEOUL_TIMEZONE).date() == target_date
+
+
 async def _extract_uos_page(page: dict, semaphore: asyncio.Semaphore) -> dict | None:
     async with semaphore:
         page_text = page["title"] + "\n" + page["body"]
@@ -59,7 +76,7 @@ async def _extract_uos_page(page: dict, semaphore: asyncio.Semaphore) -> dict | 
 
 async def collect_uos() -> list[dict]:
     # 자정 기준으로 전일 게시된 공지만 수집
-
+    yesterday = datetime.now(SEOUL_TIMEZONE).date() - timedelta(days=1)
     general, haksa = await asyncio.gather(
         asyncio.to_thread(parse_uos_rss, UOS_RSS_GENERAL),
         asyncio.to_thread(parse_uos_rss, UOS_RSS_HAKSA),
@@ -67,7 +84,11 @@ async def collect_uos() -> list[dict]:
     semaphore = asyncio.Semaphore(PAGE_EXTRACTION_CONCURRENCY)
 
     extracted_pages = await asyncio.gather(
-        *(_extract_uos_page(page, semaphore) for page in general + haksa)
+        *(
+            _extract_uos_page(page, semaphore)
+            for page in general + haksa
+            if _published_on_date(page, yesterday)
+        )
     )
     return [page for page in extracted_pages if page is not None]
 
