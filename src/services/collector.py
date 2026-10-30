@@ -1,3 +1,5 @@
+# TODO: is_eligible_activity 아닐 경우 어떤 식으로 응답할지 정하기
+
 import asyncio
 import logging
 import os
@@ -14,7 +16,6 @@ from src.llm.field_extractor import extract_fields_from_text, extract_fields_fro
 from src.llm.prompts import FIELDS_DESCRIPTION
 from src.parsers.uos_rss_parser import parse_uos_rss
 from src.parsers.contest_korea_parser import parse_contest_korea
-from src.backend_client import post_competition
 
 UOS_RSS_GENERAL = "https://www.uos.ac.kr/rss/gBoard.do"
 UOS_RSS_HAKSA = "https://www.uos.ac.kr/rss/hBoard.do"

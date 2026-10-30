@@ -19,4 +19,5 @@ async def extract_competition(request: CompetitionExtractRequest):
         page = await asyncio.to_thread(parse_contest_korea, request.url)
         return await extract_contest_korea_page(page)
 
-    return await run_pipeline(request.url)
+    extracted_fields, _ = await run_pipeline(request.url)
+    return extracted_fields

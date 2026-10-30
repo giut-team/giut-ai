@@ -1,5 +1,8 @@
+# TODO: 링크, usage 어떻게 처리할지?
+
 import asyncio
 import logging
+from functools import lru_cache
 from io import BytesIO
 from pathlib import Path
 from urllib.parse import urlparse
@@ -18,6 +21,38 @@ from src.parsers.html_parser import HtmlParser
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 NUM_KEYS = ["link_density", "rel_pos"]
 logger = logging.getLogger(__name__)
+
+MODEL_DIR = Path(__file__).resolve().parents[2] / "models"
+TEXT_SCALER_PATH = MODEL_DIR / "text_classifier" / "num_scaler_v1.joblib"
+TEXT_CLASSIFIER_PATH = MODEL_DIR / "text_classifier" / "text_classifier_v1.pt"
+IMAGE_CLASSIFIER_PATH = MODEL_DIR / "image_classifier" / "image_classifier.pt"
+
+
+@lru_cache(maxsize=1)
+def get_models():
+    # 텍스트/이미지 분류기 모델 생성 및 가중치 로드
+    scaler = joblib.load(TEXT_SCALER_PATH)
+    text_classifier = TextClassifier(n_num=len(NUM_KEYS)).to(DEVICE)
+    text_classifier.head.load_state_dict(
+        torch.load(
+            TEXT_CLASSIFIER_PATH,
+            map_location=DEVICE,
+            weights_only=True,
+        )
+    )
+    text_classifier.eval()
+
+    image_classifier = ImageClassifier().to(DEVICE)
+    image_classifier.model.load_state_dict(
+        torch.load(
+            IMAGE_CLASSIFIER_PATH,
+            map_location=DEVICE,
+            weights_only=True,
+        )
+    )
+    image_classifier.eval()
+
+    return scaler, text_classifier, image_classifier
 
 
 def load_page_text(blocks: list[dict]) -> str:
@@ -68,17 +103,7 @@ def download_image(url: str, timeout: float = 30.0) -> Image:
 def run_text_classifier(text_blocks: list[dict]):
     relevant_blocks = []
 
-    model_dir = Path(__file__).resolve().parents[2] / "models" / "text_classifier"
-    scaler = joblib.load(model_dir / "num_scaler_v1.joblib")
-    classifier = TextClassifier(n_num=len(NUM_KEYS)).to(DEVICE)
-    classifier.head.load_state_dict(
-        torch.load(
-            model_dir / "text_classifier_head_v1.pt",
-            map_location=DEVICE,
-            weights_only=True,
-        )
-    )
-    classifier.eval()
+    scaler, classifier, _ = get_models()
 
     with torch.inference_mode():
         for start in range(0, len(text_blocks), 64):
@@ -124,16 +149,7 @@ def run_image_classifier(image_blocks: list[dict]):
     if not downloaded_images:
         return []
 
-    cnn_model_dir = Path(__file__).resolve().parents[2] / "models" / "image_classifier"
-    classifier = ImageClassifier().to(DEVICE)
-    classifier.model.load_state_dict(
-        torch.load(
-            cnn_model_dir / "image_classifier.pt",
-            map_location=DEVICE,
-            weights_only=True,
-        )
-    )
-    classifier.eval()
+    _, _, classifier = get_models()
 
     with torch.inference_mode():
         predictions = (classifier.logits(downloaded_images).sigmoid() >= 0.5).tolist()

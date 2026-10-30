@@ -8,12 +8,15 @@ from fastapi import FastAPI
 
 from src.api.router import router
 from src.collector_job import run_daily_collector
+from src.services.extraction import get_models
 
 logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    get_models()
+
     load_dotenv()
     bearer_token = os.getenv("GIUT_BEARER_TOKEN", "")
     collector_task = None
