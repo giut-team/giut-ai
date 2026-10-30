@@ -11,7 +11,7 @@ import joblib
 import requests
 import torch
 
-from src.llm.dto import TargetParticipantsEnum
+from src.llm.dto import ActivityKindEnum, TargetParticipantsEnum
 from src.llm.field_extractor import extract_fields_from_images, extract_fields_from_text
 from src.ml.image_classifier import ImageClassifier
 from src.ml.text_classifier import TextClassifier, tokenize
@@ -73,7 +73,7 @@ def is_eligible_activity(extracted_fields: dict) -> bool:
 
     if (
         target_participants == TargetParticipantsEnum.NONE.value
-        or activity_kind is None
+        or activity_kind == ActivityKindEnum.NOT_ACTIVITY.value
         or is_team == False
     ):
         return False

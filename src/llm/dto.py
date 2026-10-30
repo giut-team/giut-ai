@@ -44,6 +44,7 @@ class ActivityKindEnum(Enum):
     OVERSEAS_EXPERIENCE = "해외탐방"
     NETWORKING = "행사/네트워킹"
     ETC = "기타"
+    NOT_ACTIVITY = "참여 가능한 활동이 아님"
     # 여기부턴 들어갈지 말지 모름 확정안됨
     INTERNSHIP = "인턴/직무체험"
 
