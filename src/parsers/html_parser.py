@@ -10,6 +10,7 @@ from urllib.parse import urljoin, urlparse
 import requests
 import urllib3
 from bs4 import BeautifulSoup, Comment, NavigableString
+from playwright.async_api import Error as PlaywrightError
 
 # 최상위 컨테이너 (class/id 키워드 매칭에서 제외)
 ROOT_TAGS = ("html", "body")
@@ -200,17 +201,27 @@ class HtmlParser:
             await page.goto(
                 url, timeout=self.timeout * 1000, wait_until="domcontentloaded"
             )  # "networkidle" 보다 안정적 (사이트 요청이 계속 들어올 경우 대비)
-            # 각 이미지의 원본 사이즈 및 브라우저 측정 사이즈 저장
-            await page.locator("img").evaluate_all("""images => {
-                for (const img of images) {
-                    const rect = img.getBoundingClientRect();
-                    img.setAttribute('data-parser-original-width', img.naturalWidth);
-                    img.setAttribute('data-parser-original-height', img.naturalHeight);
-                    img.setAttribute('data-parser-display-width', rect.width);
-                    img.setAttribute('data-parser-display-height', rect.height);
-                }
-            }""")
-            html = await page.content()
+            # DOM 준비 직후 페이지가 다시 이동하면 실행 컨텍스트가 사라질 수 있다.
+            for attempt in range(3):
+                try:
+                    # 각 이미지의 원본 사이즈 및 브라우저 측정 사이즈 저장
+                    await page.locator("img").evaluate_all("""images => {
+                        for (const img of images) {
+                            const rect = img.getBoundingClientRect();
+                            img.setAttribute('data-parser-original-width', img.naturalWidth);
+                            img.setAttribute('data-parser-original-height', img.naturalHeight);
+                            img.setAttribute('data-parser-display-width', rect.width);
+                            img.setAttribute('data-parser-display-height', rect.height);
+                        }
+                    }""")
+                    html = await page.content()
+                    break
+                except PlaywrightError as exc:
+                    if "Execution context was destroyed" not in str(exc) or attempt == 2:
+                        raise
+                    await page.wait_for_load_state(
+                        "domcontentloaded", timeout=self.timeout * 1000
+                    )
         finally:
             await page.close()
 

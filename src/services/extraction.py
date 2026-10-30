@@ -1,3 +1,5 @@
+import asyncio
+import logging
 from io import BytesIO
 from pathlib import Path
 from urllib.parse import urlparse
@@ -15,6 +17,7 @@ from src.parsers.html_parser import HtmlParser
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 NUM_KEYS = ["link_density", "rel_pos"]
+logger = logging.getLogger(__name__)
 
 
 def load_page_text(blocks: list[dict]) -> str:
@@ -65,7 +68,7 @@ def download_image(url: str, timeout: float = 30.0) -> Image:
 def run_text_classifier(text_blocks: list[dict]):
     relevant_blocks = []
 
-    model_dir = Path(__file__).resolve().parents[1] / "models" / "text_classifier"
+    model_dir = Path(__file__).resolve().parents[2] / "models" / "text_classifier"
     scaler = joblib.load(model_dir / "num_scaler_v1.joblib")
     classifier = TextClassifier(n_num=len(NUM_KEYS)).to(DEVICE)
     classifier.head.load_state_dict(
@@ -106,10 +109,22 @@ def run_text_classifier(text_blocks: list[dict]):
     return relevant_blocks
 
 
-def run_image_classifier(image_blocks: list[str]):
-    relevant_images = []
+def run_image_classifier(image_blocks: list[dict]):
+    valid_blocks = []
+    downloaded_images = []
+    for image in image_blocks:
+        try:
+            downloaded = download_image(image["src"])
+        except (requests.RequestException, OSError, ValueError) as exc:
+            logger.warning("[SKIP] 이미지 다운로드 실패: %s (%s)", image["src"], exc)
+            continue
+        valid_blocks.append(image)
+        downloaded_images.append(downloaded)
 
-    cnn_model_dir = Path(__file__).resolve().parents[1] / "models" / "image_classifier"
+    if not downloaded_images:
+        return []
+
+    cnn_model_dir = Path(__file__).resolve().parents[2] / "models" / "image_classifier"
     classifier = ImageClassifier().to(DEVICE)
     classifier.model.load_state_dict(
         torch.load(
@@ -121,13 +136,12 @@ def run_image_classifier(image_blocks: list[str]):
     classifier.eval()
 
     with torch.inference_mode():
-        downloaded_images = [download_image(image["src"]) for image in image_blocks]
         predictions = (classifier.logits(downloaded_images).sigmoid() >= 0.5).tolist()
-        relevant_images.extend(
+        return [
             image
-            for image, prediction in zip(image_blocks, predictions)
+            for image, prediction in zip(valid_blocks, predictions)
             if prediction == 1
-        )
+        ]
 
 
 async def run_pipeline(url: str, use_classifier: bool = True):
@@ -141,8 +155,7 @@ async def run_pipeline(url: str, use_classifier: bool = True):
     if blocks is None or len(blocks) == 0:
         return None, None
 
-    if use_classifier:
-        relevant_blocks = run_text_classifier(blocks)
+    relevant_blocks = run_text_classifier(blocks) if use_classifier else blocks
 
     page_text = load_page_text(relevant_blocks)
 
@@ -155,7 +168,8 @@ async def run_pipeline(url: str, use_classifier: bool = True):
         # 텍스트만으로 모두 추출되었을 경우
         return extracted_fields, usage
 
-    if images != [] and image_urls == []:
+    image_urls = []
+    if images != []:
         # 픽셀 단위 면적, 브라우저 내 상대 사이즈, 종횡비 룰 기반 분류
         size_filtered = []
         for image in images:
@@ -169,7 +183,9 @@ async def run_pipeline(url: str, use_classifier: bool = True):
 
         # CNN으로 포스터 사진만 분리
         if size_filtered != [] and use_classifier:
-            relevant_images = run_image_classifier(size_filtered)
+            relevant_images = await asyncio.to_thread(
+                run_image_classifier, size_filtered
+            )
         else:
             relevant_images = size_filtered
 
