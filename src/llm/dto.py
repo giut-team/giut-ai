@@ -5,7 +5,7 @@ import re
 import logging
 
 from dataclasses import fields
-from pydantic import BaseModel, create_model, field_validator
+from pydantic import BaseModel, ConfigDict, create_model, field_validator
 from pydantic.dataclasses import dataclass
 from enum import Enum
 from typing import Optional, get_type_hints
@@ -14,6 +14,8 @@ logger = logging.getLogger(__name__)
 
 
 class _SelectedExtractedFields(BaseModel):
+    model_config = ConfigDict(use_enum_values=True)
+
     def to_dict(self) -> dict:
         return self.model_dump()
 

@@ -1,5 +1,4 @@
-# TODO: 링크, usage 어떻게 처리할지?
-
+import re
 import asyncio
 import logging
 from functools import lru_cache
@@ -24,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 MODEL_DIR = Path(__file__).resolve().parents[2] / "models"
 TEXT_SCALER_PATH = MODEL_DIR / "text_classifier" / "num_scaler_v1.joblib"
-TEXT_CLASSIFIER_PATH = MODEL_DIR / "text_classifier" / "text_classifier_v1.pt"
+TEXT_CLASSIFIER_PATH = MODEL_DIR / "text_classifier" / "text_classifier_head_v1.pt"
 IMAGE_CLASSIFIER_PATH = MODEL_DIR / "image_classifier" / "image_classifier.pt"
 
 
@@ -73,8 +72,7 @@ def is_eligible_activity(extracted_fields: dict) -> bool:
     is_team = extracted_fields.get("is_team", None)
 
     if (
-        target_participants is None
-        or target_participants == TargetParticipantsEnum.NONE.value
+        target_participants == TargetParticipantsEnum.NONE.value
         or activity_kind is None
         or is_team == False
     ):
@@ -180,12 +178,8 @@ async def run_pipeline(url: str, use_classifier: bool = True):
 
     missing_keys = [key for key, value in extracted_fields.items() if value is None]
 
-    if missing_keys == []:
-        # 텍스트만으로 모두 추출되었을 경우
-        return extracted_fields, usage
-
     image_urls = []
-    if images != []:
+    if missing_keys and images:
         # 픽셀 단위 면적, 브라우저 내 상대 사이즈, 종횡비 룰 기반 분류
         size_filtered = []
         for image in images:
@@ -217,6 +211,25 @@ async def run_pipeline(url: str, use_classifier: bool = True):
         for key, value in image_extracted_fields.items():
             if value is not None:
                 extracted_fields[key] = value
+
+    if not is_eligible_activity(extracted_fields):
+        return None, None
+
+    relevant_links = set()
+    domain = (urlparse(url).hostname or "").lower()
+
+    for link in links:
+        # 공식 홈페이지 등 관련있는 링크 목록 추가
+        # 같은 도메인(연관공모전, 공모전 사이트 자체 게시판 페이지 등) 제외
+        if (urlparse(link["href"]).hostname or "").lower() != domain:
+            relevant_links.add(link["href"])
+
+    for link_text in re.findall(r"https://[^\s]+", page_text):
+        # 본문에 a 태그가 아닌 일반 텍스트로 포함된 링크 찾기
+        if (urlparse(link_text).hostname or "").lower() != domain:
+            relevant_links.add(link_text)
+
+    extracted_fields["links"] = relevant_links
 
     return extracted_fields, usage
 

@@ -2,9 +2,9 @@
 
 import asyncio
 import logging
-import os
-from datetime import date, datetime, time, timedelta
+from datetime import date, datetime, timedelta
 from email.utils import parsedate_to_datetime
+import re
 from urllib.parse import parse_qs, urljoin, urlparse
 from zoneinfo import ZoneInfo
 
@@ -59,9 +59,6 @@ async def extract_uos_page(page: dict) -> dict | None:
     extracted_fields, usage = await extract_fields_from_text(page_text)
     extracted_fields = extracted_fields.to_dict()
 
-    if not is_eligible_activity(extracted_fields):
-        return None
-
     missing_keys = [key for key, value in extracted_fields.items() if value is None]
     if missing_keys:
         image_extracted_fields, usage = await extract_fields_from_images(
@@ -71,6 +68,13 @@ async def extract_uos_page(page: dict) -> dict | None:
             if value is not None:
                 extracted_fields[key] = value
 
+    if not is_eligible_activity(extracted_fields):
+        return None
+
+    extracted_fields["links"] = {
+        page["link"],
+        *re.findall(r"https://[^\s]+", page_text),
+    }
     return extracted_fields
 
 
@@ -158,26 +162,33 @@ async def _contest_korea_detail_urls(list_url: str, yesterday: date) -> list[str
 
 
 async def extract_contest_korea_page(page: dict):
+    extracted_fields = {key: page.get(key, None) for key in FIELDS_DESCRIPTION.keys()}
     missing_keys = [
         key for key in FIELDS_DESCRIPTION.keys() if page.get(key, None) is None
     ]
+    extracted_missing_fields, usage = await extract_fields_from_text(
+        page["full_text"], missing_keys
+    )
+    extracted_missing_fields = extracted_missing_fields.to_dict()
+    for key, value in extracted_missing_fields.items():
+        extracted_fields[key] = value
+
+    missing_keys = [key for key, value in extracted_fields.items() if value is None]
     if missing_keys:
-        extracted_fields, usage = await extract_fields_from_text(
-            page["full_text"], missing_keys
+        image_extracted_fields, usage = await extract_fields_from_images(
+            [page["main_image_link"], *page["detail_image_links"]], missing_keys
         )
-        extracted_fields = extracted_fields.to_dict()
+        for key, value in image_extracted_fields.to_dict().items():
+            if value is not None:
+                extracted_fields[key] = value
 
-        if not is_eligible_activity(extracted_fields):
-            return None
+    if not is_eligible_activity(extracted_fields):
+        return None
 
-        missing_keys = [key for key, value in extracted_fields.items() if value is None]
-        if missing_keys:
-            image_extracted_fields, usage = await extract_fields_from_images(
-                [page["main_image_link"], *page["detail_image_links"]], missing_keys
-            )
-            for key, value in image_extracted_fields.to_dict().items():
-                if value is not None:
-                    extracted_fields[key] = value
+    extracted_fields["links"] = {
+        page["homepage_link"],
+        page["application_link"],
+    }.remove(None)
 
     return extracted_fields
 
