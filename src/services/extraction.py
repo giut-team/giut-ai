@@ -7,14 +7,11 @@ import joblib
 import requests
 import torch
 
-from src.services.collector import extract_contest_korea_page
 from src.llm.dto import TargetParticipantsEnum
 from src.llm.field_extractor import extract_fields_from_images, extract_fields_from_text
 from src.ml.image_classifier import ImageClassifier
 from src.ml.text_classifier import TextClassifier, tokenize
 from src.parsers.html_parser import HtmlParser
-from src.parsers.contest_korea_parser import parse_contest_korea
-from src.parsers.uos_rss_parser import parse_uos_rss
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 NUM_KEYS = ["link_density", "rel_pos"]
@@ -135,12 +132,6 @@ def run_image_classifier(image_blocks: list[str]):
 
 async def run_pipeline(url: str, use_classifier: bool = True):
     # URL의 텍스트 블록 중 relevant 본문을 모아 필드 추출 결과와 토큰 사용량 반환
-    domain = (urlparse(url).hostname or "").lower()
-
-    if domain in {"contestkorea.com", "www.contestkorea.com"}:
-        page = await parse_contest_korea(url)
-        return await extract_contest_korea_page(page)
-
     async with HtmlParser() as parser:
         parsed_data = await parser.parse_url(url, render=True)
         blocks = parsed_data.text
