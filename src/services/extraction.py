@@ -7,6 +7,7 @@ import joblib
 import requests
 import torch
 
+from src.services.collector import extract_contest_korea_page
 from src.llm.dto import TargetParticipantsEnum
 from src.llm.field_extractor import extract_fields_from_images, extract_fields_from_text
 from src.ml.image_classifier import ImageClassifier
@@ -136,28 +137,23 @@ async def run_pipeline(url: str, use_classifier: bool = True):
     # URL의 텍스트 블록 중 relevant 본문을 모아 필드 추출 결과와 토큰 사용량 반환
     domain = (urlparse(url).hostname or "").lower()
 
-    # TODO: 각각 전용 extract 함수 연결하기
     if domain in {"contestkorea.com", "www.contestkorea.com"}:
-        page_text, main_image_link, detail_image_links = parse_contest_korea(url)
-        image_urls = detail_image_links.insert(0, main_image_link)
+        page = await parse_contest_korea(url)
+        return await extract_contest_korea_page(page)
 
-    elif domain == "rss.uos.ac.kr":
-        page_text = parse_uos_rss(url)
+    async with HtmlParser() as parser:
+        parsed_data = await parser.parse_url(url, render=True)
+        blocks = parsed_data.text
+        images = parsed_data.images
+        links = parsed_data.links
 
-    else:
-        async with HtmlParser() as parser:
-            parsed_data = await parser.parse_url(url, render=True)
-            blocks = parsed_data.text
-            images = parsed_data.images
-            links = parsed_data.links
+    if blocks is None or len(blocks) == 0:
+        return None, None
 
-        if blocks is None or len(blocks) == 0:
-            return None, None
+    if use_classifier:
+        relevant_blocks = run_text_classifier(blocks)
 
-        if use_classifier:
-            relevant_blocks = run_text_classifier(blocks)
-
-        page_text = load_page_text(relevant_blocks)
+    page_text = load_page_text(relevant_blocks)
 
     extracted_fields, usage = await extract_fields_from_text(page_text)
     extracted_fields = extracted_fields.to_dict()

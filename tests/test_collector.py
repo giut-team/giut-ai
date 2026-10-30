@@ -6,7 +6,7 @@ from urllib.parse import urlencode
 
 import pytest
 
-from src import collector
+from src.services import collector
 from src import backend_client
 
 
@@ -91,14 +91,17 @@ def test_collect_uos_fetches_feeds_and_extracts_pages_concurrently(monkeypatch):
         if len(extraction_started) == 2:
             both_started.set()
         await both_started.wait()
-        return SimpleNamespace(
-            to_dict=lambda: {
-                "title": text,
-                "target_participants": "대학생만 가능",
-                "activity_kind": "공모전",
-                "is_team": True,
-            }
-        ), None
+        return (
+            SimpleNamespace(
+                to_dict=lambda: {
+                    "title": text,
+                    "target_participants": "대학생만 가능",
+                    "activity_kind": "공모전",
+                    "is_team": True,
+                }
+            ),
+            None,
+        )
 
     monkeypatch.setattr(collector, "datetime", FakeDateTime)
     monkeypatch.setattr(collector, "parse_uos_rss", fake_parse_uos_rss)

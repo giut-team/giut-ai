@@ -53,25 +53,24 @@ def _published_on_date(page: dict, target_date: date) -> bool:
     return published_at.astimezone(SEOUL_TIMEZONE).date() == target_date
 
 
-async def _extract_uos_page(page: dict, semaphore: asyncio.Semaphore) -> dict | None:
-    async with semaphore:
-        page_text = page["title"] + "\n" + page["body"]
-        extracted_fields, usage = await extract_fields_from_text(page_text)
-        extracted_fields = extracted_fields.to_dict()
+async def extract_uos_page(page: dict) -> dict | None:
+    page_text = page["title"] + "\n" + page["body"]
+    extracted_fields, usage = await extract_fields_from_text(page_text)
+    extracted_fields = extracted_fields.to_dict()
 
-        if not is_eligible_activity(extracted_fields):
-            return None
+    if not is_eligible_activity(extracted_fields):
+        return None
 
-        missing_keys = [key for key, value in extracted_fields.items() if value is None]
-        if missing_keys:
-            image_extracted_fields, usage = await extract_fields_from_images(
-                page["images"], missing_keys
-            )
-            for key, value in image_extracted_fields.to_dict().items():
-                if value is not None:
-                    extracted_fields[key] = value
+    missing_keys = [key for key, value in extracted_fields.items() if value is None]
+    if missing_keys:
+        image_extracted_fields, usage = await extract_fields_from_images(
+            page["images"], missing_keys
+        )
+        for key, value in image_extracted_fields.to_dict().items():
+            if value is not None:
+                extracted_fields[key] = value
 
-        return extracted_fields
+    return extracted_fields
 
 
 async def collect_uos() -> list[dict]:
@@ -83,9 +82,13 @@ async def collect_uos() -> list[dict]:
     )
     semaphore = asyncio.Semaphore(PAGE_EXTRACTION_CONCURRENCY)
 
+    async def extract_limited(page: dict):
+        async with semaphore:
+            return await extract_uos_page(page)
+
     extracted_pages = await asyncio.gather(
         *(
-            _extract_uos_page(page, semaphore)
+            extract_limited(page)
             for page in general + haksa
             if _published_on_date(page, yesterday)
         )
@@ -153,32 +156,29 @@ async def _contest_korea_detail_urls(list_url: str, yesterday: date) -> list[str
     return detail_urls
 
 
-async def _extract_contest_korea_page(page: dict, semaphore: asyncio.Semaphore):
-    async with semaphore:
-        missing_keys = [
-            key for key in FIELDS_DESCRIPTION.keys() if page.get(key, None) is None
-        ]
+async def extract_contest_korea_page(page: dict):
+    missing_keys = [
+        key for key in FIELDS_DESCRIPTION.keys() if page.get(key, None) is None
+    ]
+    if missing_keys:
+        extracted_fields, usage = await extract_fields_from_text(
+            page["full_text"], missing_keys
+        )
+        extracted_fields = extracted_fields.to_dict()
+
+        if not is_eligible_activity(extracted_fields):
+            return None
+
+        missing_keys = [key for key, value in extracted_fields.items() if value is None]
         if missing_keys:
-            extracted_fields, usage = await extract_fields_from_text(
-                page["full_text"], missing_keys
+            image_extracted_fields, usage = await extract_fields_from_images(
+                [page["main_image_link"], *page["detail_image_links"]], missing_keys
             )
-            extracted_fields = extracted_fields.to_dict()
+            for key, value in image_extracted_fields.to_dict().items():
+                if value is not None:
+                    extracted_fields[key] = value
 
-            if not is_eligible_activity(extracted_fields):
-                return None
-
-            missing_keys = [
-                key for key, value in extracted_fields.items() if value is None
-            ]
-            if missing_keys:
-                image_extracted_fields, usage = await extract_fields_from_images(
-                    [page["main_image_link"], *page["detail_image_links"]], missing_keys
-                )
-                for key, value in image_extracted_fields.to_dict().items():
-                    if value is not None:
-                        extracted_fields[key] = value
-
-        return extracted_fields
+    return extracted_fields
 
 
 async def collect_contest_korea() -> list[dict]:
@@ -202,41 +202,9 @@ async def collect_contest_korea() -> list[dict]:
 
     semaphore = asyncio.Semaphore(PAGE_EXTRACTION_CONCURRENCY)
 
-    extracted_pages = await asyncio.gather(
-        *(_extract_contest_korea_page(page, semaphore) for page in results)
-    )
+    async def extract_limited(page: dict):
+        async with semaphore:
+            return await extract_contest_korea_page(page)
+
+    extracted_pages = await asyncio.gather(*(extract_limited(page) for page in results))
     return [page for page in extracted_pages if page is not None]
-
-
-async def collect_and_post(bearer_token: str) -> None:
-    # 시립대 공지 및 콘테스트코리아에서 추출한 결과 리스트 전체 전송
-    uos_results, contest_korea_results = await asyncio.gather(
-        collect_uos(), collect_contest_korea()
-    )
-    payload = uos_results + contest_korea_results
-    await asyncio.to_thread(post_competition, payload, bearer_token)
-
-
-async def run_daily_collector(bearer_token: str) -> None:
-    # 매일 자정에 공모전 정보 수집 후 전송
-    if not bearer_token or not bearer_token.strip():
-        raise ValueError("bearer_token must be provided")
-
-    while True:
-        now = datetime.now(SEOUL_TIMEZONE)
-        next_midnight = datetime.combine(
-            now.date() + timedelta(days=1), time.min, tzinfo=SEOUL_TIMEZONE
-        )
-        await asyncio.sleep((next_midnight - now).total_seconds())
-
-        try:
-            await collect_and_post(bearer_token)
-        except Exception:
-            logger.exception("공모전 수집 또는 전송 실패")
-
-
-if __name__ == "__main__":
-    from dotenv import load_dotenv
-
-    load_dotenv()
-    asyncio.run(run_daily_collector(os.getenv("GIUT_BEARER_TOKEN", "")))
