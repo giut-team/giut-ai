@@ -1,0 +1,39 @@
+[
+	{
+		"page_id": 0,
+		"elapsed_time": "0:00:44.074010",
+		"input_tokens": 3859,
+		"cached_input_tokens": 0,
+		"cache_rate": 0.0,
+		"output_tokens": 4108,
+		"response": {
+			"title": "제3회 팩트체킹 공모전",
+			"host_organization": "방송기자연합회",
+			"target_participants": "TargetParticipantsEnum.ALL",
+			"is_for_enrolled_only": "False",
+			"application_start_at": "2020-06-15",
+			"application_end_at": "2020-10-05",
+			"total_prize_amount": "None",
+			"prize": "None",
+			"activity_kind": "ActivityKindEnum.CONTEST",
+			"category": "[<CategoryEnum.PHOTO_CONTENTS: '사진/영상/콘텐츠'>, <CategoryEnum.LITERATURE: '문학/글쓰기'>, <CategoryEnum.IT_DEVELOP: 'IT/개발'>]",
+			"is_team": "True",
+			"is_team_evidence": "참가 자격 : 개인 및 팀(내국인)",
+			"summary": "방송기자연합회 주최의 제3회 팩트체킹 공모전으로 일반부와 학생부로 나뉘어 팩트체크 부문과 콘텐츠 부문을 공모한다. 참가 자격은 개인 및 팀(내국인)이고, 접수 기간은 2020-06-15부터 2020-10-05까지이다."
+		},
+		"comparison": {
+			"title": "EXACT",
+			"host_organization": "EXACT",
+			"target_participants": "EXACT",
+			"is_for_enrolled_only": "EXACT",
+			"application_start_at": "EXACT",
+			"application_end_at": "EXACT",
+			"total_prize_amount": "EXACT",
+			"prize": "MISS",
+			"activity_kind": "EXACT",
+			"category": { "EXACT": 3, "ADDED": 0, "OMITTED": 0 },
+			"is_team": "EXACT",
+			"is_team_evidence": "CLOSE"
+		}
+	}
+]

@@ -1,0 +1,37 @@
+[
+	{
+		"page_id": 1,
+		"elapsed_time": "0:00:48.376335",
+		"input_tokens": 2153,
+		"cached_input_tokens": 1280,
+		"cache_rate": 0.5945192754296331,
+		"output_tokens": 5339,
+		"response": {
+			"title": "2023 대한민국 공익광고제 공모전",
+			"host_organization": "한국방송광고진흥공사",
+			"is_univ_possible": "True",
+			"application_start_at": "2023-08-10",
+			"application_end_at": "2023-09-08",
+			"total_prize_amount": "82000000",
+			"prize": "대상: 대통령상 1,000만원",
+			"activity_kind": "ActivityKindEnum.CONTEST",
+			"category": "[<CategoryEnum.IDEA: '기획/아이디어'>, <CategoryEnum.MARKETING: '홍보/마케팅'>, <CategoryEnum.DESIGN: '디자인'>]",
+			"is_team": "True",
+			"is_team_evidence": "개인 혹은 팀(최대 3명)으로 응모 가능",
+			"summary": "전 국민 대상 공익광고제 공모전으로 개인 또는 팀(최대 3명)으로 응모 가능하며 일반부/대학생부/청소년부로 구분되어 TV(스토리보드)/인쇄와 영상/이모티콘 부문에 응모할 수 있다."
+		},
+		"comparison": {
+			"title": "EXACT",
+			"host_organization": "EXACT",
+			"is_univ_possible": "EXACT",
+			"application_start_at": "EXACT",
+			"application_end_at": "EXACT",
+			"total_prize_amount": "EXACT",
+			"prize": "EXACT",
+			"activity_kind": "EXACT",
+			"category": { "EXACT": 1, "ADDED": 2, "OMITTED": 1 },
+			"is_team": "EXACT",
+			"is_team_evidence": "CLOSE"
+		}
+	}
+]

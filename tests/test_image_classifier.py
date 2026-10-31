@@ -3,7 +3,6 @@ from pathlib import Path
 
 import torch
 from torch.utils.data import DataLoader
-from torchvision import transforms
 
 from src.ml.image_classifier import ImageClassifier
 from training.train_image_classifier import (
@@ -11,8 +10,6 @@ from training.train_image_classifier import (
     DEVICE,
     IMAGE_EXTENSIONS,
     IMAGE_MODEL_PATH,
-    IMAGENET_MEAN,
-    IMAGENET_STD,
     ImageDataset,
     evaluate,
 )
@@ -46,16 +43,8 @@ def main():
         raise FileNotFoundError(f"학습된 모델 없음: {IMAGE_MODEL_PATH} ")
 
     samples = load_samples()
-    test_transform = transforms.Compose(
-        [
-            transforms.Resize(256),
-            transforms.CenterCrop(224),
-            transforms.ToTensor(),
-            transforms.Normalize(IMAGENET_MEAN, IMAGENET_STD),
-        ]
-    )
     test_loader = DataLoader(
-        ImageDataset(samples, test_transform),
+        ImageDataset(samples),
         batch_size=BATCH_SIZE,
         shuffle=False,
         num_workers=NUM_WORKERS,
