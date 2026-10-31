@@ -213,11 +213,13 @@ async def run_pipeline(url: str, use_classifier: bool = True):
             if value is not None:
                 extracted_fields[key] = value
 
-    relevant_links = set()
+    extracted_fields["source_url"] = url  # 수집 경로 url 추가
+
+    # 공식 홈페이지 등 관련있는 링크 목록 추가
+    relevant_links = {url}
     domain = (urlparse(url).hostname or "").lower()
 
     for link in links:
-        # 공식 홈페이지 등 관련있는 링크 목록 추가
         # 같은 도메인(연관공모전, 공모전 사이트 자체 게시판 페이지 등) 제외
         if (urlparse(link["href"]).hostname or "").lower() != domain:
             relevant_links.add(link["href"])

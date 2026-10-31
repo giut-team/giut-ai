@@ -23,4 +23,5 @@ class CompetitionExtractResponse(BaseModel):
     is_team: Optional[bool]
     is_team_evidence: Optional[str]  # 팀 참가 가능하다고 판단한 근거 문장
     summary: Optional[str]
+    source_url: str
     links: Optional[Iterable[str]]

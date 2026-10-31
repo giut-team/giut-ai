@@ -69,6 +69,7 @@ async def extract_uos_page(page: dict) -> dict:
             if value is not None:
                 extracted_fields[key] = value
 
+    extracted_fields["source_url"] = page["link"]
     extracted_fields["links"] = {
         page["link"],
         *re.findall(r"https://[^\s]+", page_text),
@@ -179,7 +180,9 @@ async def extract_contest_korea_page(page: dict):
             if value is not None:
                 extracted_fields[key] = value
 
+    extracted_fields["source_url"] = page["source_url"]
     extracted_fields["links"] = {
+        page["source_url"],
         page["homepage_link"],
         page["application_link"],
     }.remove(None)
