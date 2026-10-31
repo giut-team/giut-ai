@@ -66,7 +66,7 @@ def load_page_text(blocks: list[dict]) -> str:
 
 
 def is_eligible_activity(extracted_fields: dict) -> bool:
-    # 참여할 수 없는 활동이거나 팀 참가가 불가능한지 확인
+    # 참여할 수 없는 활동이거나 팀 참가가 불가능한 경우 필터링 함수(예비용)
     target_participants = extracted_fields.get("target_participants", None)
     activity_kind = extracted_fields.get("activity_kind", None)
     is_team = extracted_fields.get("is_team", None)
@@ -166,6 +166,7 @@ async def run_pipeline(url: str, use_classifier: bool = True):
         images = parsed_data.images
         links = parsed_data.links
 
+    # TODO: html 추출 못하면 어케할지
     if blocks is None or len(blocks) == 0:
         return None, None
 
@@ -211,9 +212,6 @@ async def run_pipeline(url: str, use_classifier: bool = True):
         for key, value in image_extracted_fields.items():
             if value is not None:
                 extracted_fields[key] = value
-
-    if not is_eligible_activity(extracted_fields):
-        return None, None
 
     relevant_links = set()
     domain = (urlparse(url).hostname or "").lower()

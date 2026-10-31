@@ -17,10 +17,8 @@ async def extract_competition(request: CompetitionExtractRequest):
 
     if domain in {"contestkorea.com", "www.contestkorea.com"}:
         page = await asyncio.to_thread(parse_contest_korea, request.url)
-        result = await extract_contest_korea_page(page)
-    else:
-        result, _ = await run_pipeline(request.url)
+        return await extract_contest_korea_page(page)
 
-    if type(result) != dict:
-        raise ValueError("참가 가능한 활동이 아님")
+    result, _ = await run_pipeline(request.url)
+    # TODO: 예외처리 형식 정하기
     return result

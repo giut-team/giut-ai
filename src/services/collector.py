@@ -1,5 +1,3 @@
-# TODO: is_eligible_activity 아닐 경우 어떤 식으로 응답할지 정하기
-
 import asyncio
 import logging
 from datetime import date, datetime, timedelta
@@ -11,7 +9,6 @@ from zoneinfo import ZoneInfo
 import requests
 from bs4 import BeautifulSoup
 
-from src.services.extraction import is_eligible_activity
 from src.llm.field_extractor import extract_fields_from_text, extract_fields_from_images
 from src.llm.prompts import FIELDS_DESCRIPTION
 from src.parsers.uos_rss_parser import parse_uos_rss
@@ -21,8 +18,12 @@ UOS_RSS_GENERAL = "https://www.uos.ac.kr/rss/gBoard.do"
 UOS_RSS_HAKSA = "https://www.uos.ac.kr/rss/hBoard.do"
 PAGE_EXTRACTION_CONCURRENCY = 5
 
-CONTEST_KOREA_CONTEST_LIST = "https://www.contestkorea.com/sub/list.php?int_gbn=1"
-CONTEST_KOREA_ACTIVITY_LIST = "https://www.contestkorea.com/sub/list.php?int_gbn=2"
+CONTEST_KOREA_CONTEST_LIST = (
+    "https://www.contestkorea.com/sub/list.php?int_gbn=1"  # 공모전/대회
+)
+CONTEST_KOREA_ACTIVITY_LIST = (
+    "https://www.contestkorea.com/sub/list.php?int_gbn=2"  # 대외활동
+)
 CONTEST_KOREA_FILTERS = {  # 공모전 검색 조건
     "Txt_sortkey": "a.int_sort",
     "Txt_sortword": "desc",
@@ -54,7 +55,7 @@ def _published_on_date(page: dict, target_date: date) -> bool:
     return published_at.astimezone(SEOUL_TIMEZONE).date() == target_date
 
 
-async def extract_uos_page(page: dict) -> dict | None:
+async def extract_uos_page(page: dict) -> dict:
     page_text = page["title"] + "\n" + page["body"]
     extracted_fields, usage = await extract_fields_from_text(page_text)
     extracted_fields = extracted_fields.to_dict()
@@ -67,9 +68,6 @@ async def extract_uos_page(page: dict) -> dict | None:
         for key, value in image_extracted_fields.to_dict().items():
             if value is not None:
                 extracted_fields[key] = value
-
-    if not is_eligible_activity(extracted_fields):
-        return None
 
     extracted_fields["links"] = {
         page["link"],
@@ -91,14 +89,13 @@ async def collect_uos() -> list[dict]:
         async with semaphore:
             return await extract_uos_page(page)
 
-    extracted_pages = await asyncio.gather(
+    return await asyncio.gather(
         *(
             extract_limited(page)
             for page in general + haksa
             if _published_on_date(page, yesterday)
         )
     )
-    return [page for page in extracted_pages if page is not None]
 
 
 async def _contest_korea_detail_urls(list_url: str, yesterday: date) -> list[str]:
@@ -182,9 +179,6 @@ async def extract_contest_korea_page(page: dict):
             if value is not None:
                 extracted_fields[key] = value
 
-    if not is_eligible_activity(extracted_fields):
-        return None
-
     extracted_fields["links"] = {
         page["homepage_link"],
         page["application_link"],
@@ -218,5 +212,4 @@ async def collect_contest_korea() -> list[dict]:
         async with semaphore:
             return await extract_contest_korea_page(page)
 
-    extracted_pages = await asyncio.gather(*(extract_limited(page) for page in results))
-    return [page for page in extracted_pages if page is not None]
+    return await asyncio.gather(*(extract_limited(page) for page in results))
