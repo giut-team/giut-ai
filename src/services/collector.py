@@ -9,7 +9,7 @@ from zoneinfo import ZoneInfo
 import requests
 from bs4 import BeautifulSoup
 
-from services.extraction import is_eligible_activity
+from src.services.extraction import is_eligible_activity
 from src.llm.field_extractor import extract_fields_from_text, extract_fields_from_images
 from src.llm.prompts import FIELDS_DESCRIPTION
 from src.parsers.uos_rss_parser import parse_uos_rss
@@ -58,8 +58,13 @@ def _published_on_date(page: dict, target_date: date) -> bool:
 
 async def extract_uos_page(page: dict) -> dict:
     page_text = page["title"] + "\n" + page["body"]
-    extracted_fields, usage = await extract_fields_from_text(page_text)
+    # 제목을 RSS피드에서 이미 제공하므로 추출할 키에서 제외
+    keys = [*FIELDS_DESCRIPTION][:]
+    keys.remove("title")
+
+    extracted_fields, usage = await extract_fields_from_text(page_text, keys)
     extracted_fields = extracted_fields.to_dict()
+    extracted_fields["title"] = page["title"]
     extracted_fields["source_url"] = page["link"]
 
     if not is_eligible_activity(extracted_fields):
