@@ -69,6 +69,7 @@ async def extract_uos_page(page: dict) -> dict:
             if value is not None:
                 extracted_fields[key] = value
 
+    extracted_fields["images"] = page["images"]
     extracted_fields["source_url"] = page["link"]
     extracted_fields["links"] = {
         page["link"],
