@@ -66,7 +66,7 @@ def load_page_text(blocks: list[dict]) -> str:
 
 
 def is_eligible_activity(extracted_fields: dict) -> bool:
-    # 참여할 수 없는 활동이거나 팀 참가가 불가능한 경우 필터링 함수(예비용)
+    # 참여할 수 없는 활동이거나 팀 참가가 불가능한 경우 필터링 함수
     target_participants = extracted_fields.get("target_participants", None)
     activity_kind = extracted_fields.get("activity_kind", None)
     is_team = extracted_fields.get("is_team", None)
@@ -74,6 +74,7 @@ def is_eligible_activity(extracted_fields: dict) -> bool:
     if (
         target_participants == TargetParticipantsEnum.NONE.value
         or activity_kind == ActivityKindEnum.NOT_ACTIVITY.value
+        or activity_kind == ActivityKindEnum.MULTIPLE_ACTIVITIES.value
         or is_team == False
     ):
         return False
@@ -166,7 +167,6 @@ async def run_pipeline(url: str, use_classifier: bool = True):
         images = parsed_data.images
         links = parsed_data.links
 
-    # TODO: html 추출 못하면 어케할지
     if blocks is None or len(blocks) == 0:
         return None, None
 
@@ -176,6 +176,10 @@ async def run_pipeline(url: str, use_classifier: bool = True):
 
     extracted_fields, usage = await extract_fields_from_text(page_text)
     extracted_fields = extracted_fields.to_dict()
+    extracted_fields["source_url"] = url  # 수집 경로 url 추가
+
+    if not is_eligible_activity(extracted_fields):
+        return extracted_fields, usage
 
     missing_keys = [key for key, value in extracted_fields.items() if value is None]
 
@@ -212,8 +216,6 @@ async def run_pipeline(url: str, use_classifier: bool = True):
         for key, value in image_extracted_fields.items():
             if value is not None:
                 extracted_fields[key] = value
-
-    extracted_fields["source_url"] = url  # 수집 경로 url 추가
 
     # 공식 홈페이지 등 관련있는 링크 목록 추가
     relevant_links = {url}
