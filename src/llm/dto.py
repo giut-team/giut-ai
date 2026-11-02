@@ -45,7 +45,7 @@ class ActivityKindEnum(Enum):
     NETWORKING = "행사/네트워킹"
     ETC = "기타"
     NOT_ACTIVITY = "참여 가능한 활동이 아님"
-    MULTIPLE_ACTIVITIES = "2개 이상의 행사"  # TODO: 이름 명확히 정할 것
+    MULTIPLE_ACTIVITIES = "2개 이상의 활동"  # TODO: 이름 명확히 정할 것
     # 여기부턴 들어갈지 말지 모름 확정안됨
     INTERNSHIP = "인턴/직무체험"
 
@@ -73,7 +73,7 @@ class ExtractedFields:
     application_start_at: Optional[date]
     application_end_at: Optional[date]
     total_prize_amount: Optional[int]
-    prize: Optional[str]
+    prize_info: Optional[str]
     activity_kind: Optional[ActivityKindEnum]
     category: list[CategoryEnum]
     is_team: Optional[bool]

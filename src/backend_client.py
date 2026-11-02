@@ -5,7 +5,7 @@ from typing import Any, Mapping
 
 import requests
 
-COMPETITIONS_URL = "https://api.dev.giut.store/api/integrations/competitions"
+COMPETITIONS_URL = "https://api.dev.giut.store/api/integrations/competitions/batch"
 
 
 def _json_default(value: Any) -> Any:
@@ -18,13 +18,13 @@ def _json_default(value: Any) -> Any:
 
 def post_competition(
     extracted_fields: Mapping[str, Any] | list[Mapping[str, Any]],
-    bearer_token: str,
+    x_ai_api_key: str,
     *,
     timeout: float = 10.0,
 ) -> requests.Response:
     # 추출된 필드를 JSON 본문으로 전송
-    if not bearer_token or not bearer_token.strip():
-        raise ValueError("bearer_token must be provided")
+    if not x_ai_api_key or not x_ai_api_key.strip():
+        raise ValueError("X-AI-API-Key must be provided")
 
     if isinstance(extracted_fields, list):
         fields = [dict(item) for item in extracted_fields]
@@ -34,7 +34,9 @@ def post_competition(
     response = requests.post(
         COMPETITIONS_URL,
         json=payload,
-        headers={"Authorization": f"Bearer {bearer_token.strip()}"},
+        headers={
+            "X-AI-API-Key": f"{x_ai_api_key.strip()}",
+        },
         timeout=timeout,
     )
     response.raise_for_status()

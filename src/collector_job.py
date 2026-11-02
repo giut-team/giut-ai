@@ -11,19 +11,19 @@ SEOUL_TIMEZONE = ZoneInfo("Asia/Seoul")
 logger = logging.getLogger(__name__)
 
 
-async def collect_and_post(bearer_token: str) -> None:
+async def collect_and_post(x_ai_api_key: str) -> None:
     # 시립대 공지 및 콘테스트코리아에서 추출한 결과 리스트 전체 전송
     uos_results, contest_korea_results = await asyncio.gather(
         collect_uos(), collect_contest_korea()
     )
     payload = uos_results + contest_korea_results
-    await asyncio.to_thread(post_competition, payload, bearer_token)
+    await asyncio.to_thread(post_competition, payload, x_ai_api_key)
 
 
-async def run_daily_collector(bearer_token: str) -> None:
+async def run_daily_collector(x_ai_api_key: str) -> None:
     # 매일 자정에 공모전 정보 수집 후 전송
-    if not bearer_token or not bearer_token.strip():
-        raise ValueError("bearer_token must be provided")
+    if not x_ai_api_key or not x_ai_api_key.strip():
+        raise ValueError("X-AI-API-Key must be provided")
 
     while True:
         now = datetime.now(SEOUL_TIMEZONE)
@@ -33,13 +33,12 @@ async def run_daily_collector(bearer_token: str) -> None:
         await asyncio.sleep((next_midnight - now).total_seconds())
 
         try:
-            await collect_and_post(bearer_token)
+            await collect_and_post(x_ai_api_key)
         except Exception:
             logger.exception("공모전 수집 또는 전송 실패")
 
 
 if __name__ == "__main__":
-    from dotenv import load_dotenv
+    from src.config import settings
 
-    load_dotenv()
-    asyncio.run(run_daily_collector(os.getenv("GIUT_BEARER_TOKEN", "")))
+    asyncio.run(run_daily_collector(settings.X_AI_API_KEY))
