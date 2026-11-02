@@ -13,7 +13,7 @@ from typing import Optional, get_type_hints
 logger = logging.getLogger(__name__)
 
 
-class _SelectedExtractedFields(BaseModel):
+class SelectedExtractedFields(BaseModel):
     model_config = ConfigDict(use_enum_values=True)
 
     def to_dict(self) -> dict:
@@ -44,8 +44,7 @@ class ActivityKindEnum(Enum):
     OVERSEAS_EXPERIENCE = "해외탐방"
     NETWORKING = "행사/네트워킹"
     ETC = "기타"
-    NOT_ACTIVITY = "참여 가능한 활동이 아님"
-    MULTIPLE_ACTIVITIES = "2개 이상의 활동"  # TODO: 이름 명확히 정할 것
+    INVALID_ACTIVITY = "부적합"
     # 여기부턴 들어갈지 말지 모름 확정안됨
     INTERNSHIP = "인턴/직무체험"
 
@@ -75,13 +74,13 @@ class ExtractedFields:
     total_prize_amount: Optional[int]
     prize_info: Optional[str]
     activity_kind: Optional[ActivityKindEnum]
-    category: list[CategoryEnum]
+    category: Optional[list[CategoryEnum]]
     is_team: Optional[bool]
     is_team_evidence: Optional[str]  # 팀 참가 가능하다고 판단한 근거 문장
     summary: Optional[str] = None
 
     @classmethod
-    def select_fields(cls, keys: list[str]) -> type[_SelectedExtractedFields]:
+    def select_fields(cls, keys: list[str]) -> type[SelectedExtractedFields]:
         field_types = get_type_hints(cls)
         if not keys or len(keys) != len(set(keys)):
             raise ValueError("필드 이름을 중복 없이 하나 이상 지정해야 합니다")
@@ -102,7 +101,7 @@ class ExtractedFields:
 
         return create_model(
             f"{cls.__name__}Subset",
-            __base__=_SelectedExtractedFields,
+            __base__=SelectedExtractedFields,
             __validators__=validators,
             **{key: (field_types[key], ...) for key in keys},
         )
