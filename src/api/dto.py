@@ -19,7 +19,7 @@ class CompetitionExtractResponse(BaseModel):
     total_prize_amount: Optional[int] = None
     prize: Optional[str] = None
     activity_kind: Optional[str] = None
-    category: list[str] = []
+    category: Optional[list[str]] = None
     is_team: Optional[bool] = None
     summary: Optional[str] = None
     images: Optional[list[str]] = None

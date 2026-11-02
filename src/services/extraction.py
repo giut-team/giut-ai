@@ -167,8 +167,9 @@ async def run_pipeline(url: str, use_classifier: bool = True):
         images = parsed_data.images
         links = parsed_data.links
 
+    # html 텍스트를 추출하지 못하거나 브라우저 접속 오류의 경우 예외 발생
     if blocks is None or len(blocks) == 0:
-        return None, None
+        raise ValueError("페이지 텍스트 추출에 실패했습니다.")
 
     relevant_blocks = run_text_classifier(blocks) if use_classifier else blocks
 

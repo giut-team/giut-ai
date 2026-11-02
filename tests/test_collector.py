@@ -7,6 +7,7 @@ from urllib.parse import urlencode
 import pytest
 
 from src.services import collector
+from src import collector_job
 from src import backend_client
 
 
@@ -86,7 +87,9 @@ def test_collect_uos_fetches_feeds_and_extracts_pages_concurrently(monkeypatch):
             },
         ]
 
-    async def fake_extract_fields_from_text(text):
+    async def fake_extract_fields_from_text(text, keys=[]):
+        print("keys:", keys)
+
         extraction_started.append(text)
         if len(extraction_started) == 2:
             both_started.set()
@@ -178,7 +181,7 @@ def test_collect_contest_korea_filters_yesterday_across_pages(monkeypatch):
     monkeypatch.setattr(collector, "datetime", FakeDateTime)
     monkeypatch.setattr(collector.requests, "get", fake_get)
     monkeypatch.setattr(collector, "parse_contest_korea", fake_parse)
-    monkeypatch.setattr(collector, "_extract_contest_korea_page", fake_extract_page)
+    monkeypatch.setattr(collector, "extract_contest_korea_page", fake_extract_page)
 
     results = asyncio.run(collector.collect_contest_korea())
 
@@ -213,7 +216,7 @@ def test_daily_collector_waits_until_seoul_midnight(monkeypatch):
     monkeypatch.setattr(collector.asyncio, "sleep", fake_sleep)
 
     with pytest.raises(asyncio.CancelledError):
-        asyncio.run(collector.run_daily_collector("test-token"))
+        asyncio.run(collector_job.run_daily_collector("test-token"))
 
     assert delays == [60]
 
