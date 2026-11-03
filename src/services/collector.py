@@ -9,6 +9,7 @@ from zoneinfo import ZoneInfo
 import requests
 from bs4 import BeautifulSoup
 
+from src.services.extraction import is_eligible_activity
 from src.llm.field_extractor import extract_fields_from_text, extract_fields_from_images
 from src.llm.prompts import FIELDS_DESCRIPTION
 from src.parsers.uos_rss_parser import parse_uos_rss
@@ -57,8 +58,17 @@ def _published_on_date(page: dict, target_date: date) -> bool:
 
 async def extract_uos_page(page: dict) -> dict:
     page_text = page["title"] + "\n" + page["body"]
-    extracted_fields, usage = await extract_fields_from_text(page_text)
+    # 제목을 RSS피드에서 이미 제공하므로 추출할 키에서 제외
+    keys = [*FIELDS_DESCRIPTION][:]
+    keys.remove("title")
+
+    extracted_fields, usage = await extract_fields_from_text(page_text, keys)
     extracted_fields = extracted_fields.to_dict()
+    extracted_fields["title"] = page["title"]
+    extracted_fields["source_url"] = page["link"]
+
+    if not is_eligible_activity(extracted_fields):
+        return extracted_fields
 
     missing_keys = [key for key, value in extracted_fields.items() if value is None]
     if missing_keys:
@@ -69,6 +79,7 @@ async def extract_uos_page(page: dict) -> dict:
             if value is not None:
                 extracted_fields[key] = value
 
+    extracted_fields["images"] = page["images"]
     extracted_fields["links"] = {
         page["link"],
         *re.findall(r"https://[^\s]+", page_text),
@@ -160,6 +171,8 @@ async def _contest_korea_detail_urls(list_url: str, yesterday: date) -> list[str
 
 async def extract_contest_korea_page(page: dict):
     extracted_fields = {key: page.get(key, None) for key in FIELDS_DESCRIPTION.keys()}
+    extracted_fields["source_url"] = page["source_url"]
+
     missing_keys = [
         key for key in FIELDS_DESCRIPTION.keys() if page.get(key, None) is None
     ]
@@ -169,6 +182,9 @@ async def extract_contest_korea_page(page: dict):
     extracted_missing_fields = extracted_missing_fields.to_dict()
     for key, value in extracted_missing_fields.items():
         extracted_fields[key] = value
+
+    if not is_eligible_activity(extracted_fields):
+        return extracted_fields
 
     missing_keys = [key for key, value in extracted_fields.items() if value is None]
     if missing_keys:
@@ -180,6 +196,7 @@ async def extract_contest_korea_page(page: dict):
                 extracted_fields[key] = value
 
     extracted_fields["links"] = {
+        page["source_url"],
         page["homepage_link"],
         page["application_link"],
     }.remove(None)

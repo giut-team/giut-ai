@@ -226,6 +226,7 @@ def parse_contest_korea_html(
         "full_text": full_text,
         "main_image_link": main_image_link,
         "detail_image_links": detail_image_links,
+        "source_url": base_url,
         "homepage_link": _link(field("홈페이지"), base_url),
         "application_link": _link(field("접수하기"), base_url),
     }

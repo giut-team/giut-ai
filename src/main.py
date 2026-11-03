@@ -6,6 +6,7 @@ from contextlib import asynccontextmanager, suppress
 from dotenv import load_dotenv
 from fastapi import FastAPI
 
+from src.api.exceptions import register_exception_handlers
 from src.api.router import router
 from src.collector_job import run_daily_collector
 from src.services.extraction import get_models
@@ -36,4 +37,5 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
+register_exception_handlers(app)
 app.include_router(router)

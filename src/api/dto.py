@@ -1,5 +1,5 @@
 from datetime import date
-from typing import Iterable, Optional
+from typing import Optional
 from pydantic import BaseModel, ConfigDict
 
 
@@ -7,20 +7,26 @@ class CompetitionExtractRequest(BaseModel):
     url: str
 
 
+class UrlItem(BaseModel):
+    type: str
+    url: str
+    primary: bool
+
+
 class CompetitionExtractResponse(BaseModel):
     model_config = ConfigDict(use_enum_values=True)
 
-    title: Optional[str]
-    host_organization: Optional[str]
-    target_participants: Optional[str]
-    is_for_enrolled_only: Optional[bool]
-    application_start_at: Optional[date]
-    application_end_at: Optional[date]
-    total_prize_amount: Optional[int]
-    prize: Optional[str]
-    activity_kind: Optional[str]
-    category: list[str]
-    is_team: Optional[bool]
-    is_team_evidence: Optional[str]  # 팀 참가 가능하다고 판단한 근거 문장
-    summary: Optional[str]
-    links: Optional[Iterable[str]]
+    title: Optional[str] = None
+    host_organization: Optional[str] = None
+    target_participants: Optional[str] = None
+    is_for_enrolled_only: Optional[bool] = None
+    application_start_at: Optional[date] = None
+    application_end_at: Optional[date] = None
+    total_prize_amount: Optional[int] = None
+    prize_info: Optional[str] = None
+    activity_kind: Optional[str] = None
+    category: Optional[list[str]] = None
+    is_team: Optional[bool] = None
+    summary: Optional[str] = None
+    # images: Optional[list[str]] = None
+    urls: Optional[list[UrlItem] | str] = None
