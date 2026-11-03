@@ -171,7 +171,7 @@ async def _contest_korea_detail_urls(list_url: str, yesterday: date) -> list[str
 
 async def extract_contest_korea_page(page: dict):
     extracted_fields = {key: page.get(key, None) for key in FIELDS_DESCRIPTION.keys()}
-    extracted_fields["source_url"] = page["source_url"]
+    extracted_fields["urls"] = page["urls"]
 
     missing_keys = [
         key for key in FIELDS_DESCRIPTION.keys() if page.get(key, None) is None
@@ -194,12 +194,6 @@ async def extract_contest_korea_page(page: dict):
         for key, value in image_extracted_fields.to_dict().items():
             if value is not None:
                 extracted_fields[key] = value
-
-    extracted_fields["links"] = {
-        page["source_url"],
-        page["homepage_link"],
-        page["application_link"],
-    }.remove(None)
 
     return extracted_fields
 

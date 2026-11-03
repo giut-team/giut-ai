@@ -10,7 +10,7 @@ class CompetitionExtractRequest(BaseModel):
 class UrlItem(BaseModel):
     type: str
     url: str
-    primary: bool
+    # primary: bool
 
 
 class CompetitionExtractResponse(BaseModel):
