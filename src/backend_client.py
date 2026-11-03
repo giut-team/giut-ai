@@ -22,7 +22,7 @@ def post_competition(
     *,
     timeout: float = 10.0,
 ) -> requests.Response:
-    # 추출된 필드를 JSON 본문으로 전송
+    """추출된 필드를 JSON 본문으로 전송"""
     if not x_ai_api_key or not x_ai_api_key.strip():
         raise ValueError("X-AI-API-Key must be provided")
 

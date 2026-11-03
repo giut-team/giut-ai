@@ -45,7 +45,7 @@ def load_samples(text_dir: str = TEXT_DIR):
 
 
 def fit_num_scaler(blocks: list[dict]) -> StandardScaler:
-    # 전체 학습셋 기준으로 수치 피처 스케일러를 한 번만 fit
+    """전체 학습셋 기준으로 수치 피처 스케일러를 한 번만 fit"""
     feats = [[b["num_features"][k] for k in NUM_KEYS] for b in blocks]
     return StandardScaler().fit(feats)
 
@@ -73,8 +73,8 @@ def make_batch(
 
 @torch.no_grad()
 def evaluate(classifier, blocks, labels, scaler, batch_size=64, threshold=0.5):
-    # RELEVANT(=1) 기준 accuracy / precision / recall / f1 + 혼동행렬
-    # threshold: argmax 기본값 0.5 보다 작게 -> RELEVANT 판정 여유
+    """RELEVANT(=1) 기준 accuracy / precision / recall / f1 + 혼동행렬.
+    threshold: argmax 기본값 0.5 보다 작게 -> RELEVANT 판정 여유"""
     was_training = classifier.training
     classifier.eval()
 

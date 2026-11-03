@@ -1,4 +1,4 @@
-# 콘테스트코리아 상세 페이지의 테이블 내용, 포스터 URL 추출
+"""콘테스트코리아 상세 페이지의 테이블 내용, 포스터 URL 추출"""
 
 from __future__ import annotations
 

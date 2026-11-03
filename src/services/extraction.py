@@ -31,7 +31,7 @@ IMAGE_CLASSIFIER_PATH = MODEL_DIR / "image_classifier" / "image_classifier.pt"
 
 @lru_cache(maxsize=1)
 def get_models():
-    # 텍스트/이미지 분류기 모델 생성 및 가중치 로드
+    """텍스트/이미지 분류기 모델 생성 및 가중치 로드"""
     scaler = joblib.load(TEXT_SCALER_PATH)
     text_classifier = TextClassifier(n_num=len(NUM_KEYS)).to(DEVICE)
     text_classifier.head.load_state_dict(
@@ -56,19 +56,8 @@ def get_models():
     return scaler, text_classifier, image_classifier
 
 
-def load_page_text(blocks: list[dict]) -> str:
-    page_text = ""
-
-    for b in blocks:
-        block_text = b.get("text", None)
-        if block_text is not None:
-            page_text += block_text + "\n"
-
-    return page_text
-
-
 def is_eligible_activity(extracted_fields: dict) -> bool:
-    # 참여할 수 없는 활동이거나 팀 참가가 불가능한 경우 필터링 함수
+    """참여할 수 없는 활동이거나 팀 참가가 불가능한 경우 필터링 함수"""
     target_participants = extracted_fields.get("target_participants", None)
     activity_kind = extracted_fields.get("activity_kind", None)
     is_team = extracted_fields.get("is_team", None)
@@ -83,8 +72,23 @@ def is_eligible_activity(extracted_fields: dict) -> bool:
     return True
 
 
-def download_image(url: str, timeout: float = 30.0) -> Image:
-    # HTTP(S) 이미지 주소에서 바이트 데이터 다운로드
+def filter_official_url(source_url: str) -> str:
+    pass
+
+
+def _load_page_text(blocks: list[dict]) -> str:
+    page_text = ""
+
+    for b in blocks:
+        block_text = b.get("text", None)
+        if block_text is not None:
+            page_text += block_text + "\n"
+
+    return page_text
+
+
+def _download_image(url: str, timeout: float = 30.0) -> Image:
+    """HTTP(S) 이미지 주소에서 바이트 데이터 다운로드"""
     parsed_url = urlparse(url)
     if parsed_url.scheme.lower() not in {"http", "https"} or not parsed_url.netloc:
         raise ValueError("이미지 주소가 HTTP(S) URL이 아님")
@@ -139,7 +143,7 @@ def run_image_classifier(image_blocks: list[dict]):
     downloaded_images = []
     for image in image_blocks:
         try:
-            downloaded = download_image(image["src"])
+            downloaded = _download_image(image["src"])
         except (requests.RequestException, OSError, ValueError) as exc:
             logger.warning("[SKIP] 이미지 다운로드 실패: %s (%s)", image["src"], exc)
             continue
@@ -161,7 +165,7 @@ def run_image_classifier(image_blocks: list[dict]):
 
 
 async def run_pipeline(url: str, use_classifier: bool = True):
-    # URL의 텍스트 블록 중 relevant 본문을 모아 필드 추출 결과와 토큰 사용량 반환
+    """URL의 텍스트 블록 중 relevant 본문을 모아 필드 추출 결과와 토큰 사용량 반환"""
     async with HtmlParser() as parser:
         parsed_data = await parser.parse_url(url, render=True)
         blocks = parsed_data.text
@@ -174,7 +178,7 @@ async def run_pipeline(url: str, use_classifier: bool = True):
 
     relevant_blocks = run_text_classifier(blocks) if use_classifier else blocks
 
-    page_text = load_page_text(relevant_blocks)
+    page_text = _load_page_text(relevant_blocks)
 
     extracted_fields, usage = await extract_fields_from_text(page_text)
     extracted_fields = extracted_fields.to_dict()
@@ -219,7 +223,7 @@ async def run_pipeline(url: str, use_classifier: bool = True):
             if value is not None:
                 extracted_fields[key] = value
 
-    # 공식 홈페이지 등 관련있는 링크 목록 추가
+    # TODO: 공식 페이지 url만 가져오도록 수정
     relevant_links = {url}
     domain = (urlparse(url).hostname or "").lower()
 

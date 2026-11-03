@@ -28,5 +28,5 @@ class CompetitionExtractResponse(BaseModel):
     category: Optional[list[str]] = None
     is_team: Optional[bool] = None
     summary: Optional[str] = None
-    # images: Optional[list[str]] = None
+    images: Optional[list[str]] = None
     urls: Optional[list[UrlItem] | str] = None

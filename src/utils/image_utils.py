@@ -3,7 +3,7 @@ from io import BytesIO
 from pathlib import Path
 from PIL import Image
 
-from src.services.extraction import download_image
+from src.services.extraction import _download_image
 
 
 def _convert_image_to_base64(image_path: str) -> str:
@@ -16,7 +16,7 @@ def _convert_image_to_base64(image_path: str) -> str:
     }
 
     if image_path.lower().startswith(("http://", "https://")):
-        image = download_image(image_path)
+        image = _download_image(image_path)
     else:
         image_bytes = Path(image_path).read_bytes()
         image = Image.open(BytesIO(image_bytes))
