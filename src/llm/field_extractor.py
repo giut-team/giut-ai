@@ -9,6 +9,15 @@ from src.llm.prompts import FIELDS_DESCRIPTION, OPENAI_LLM_PROMPT, OPENAI_VLM_PR
 
 logger = logging.getLogger(__name__)
 
+# TODO: usage 로그 작성 기능 추가
+#       - usage를 함께 반환 안하고 로그 문서에만 따로 적기
+#       - 파이프라인, 테스트 코드 수정
+
+
+async def write_gpt_usage_log(usage: CompletionUsage):
+    # 파일 열어서 동시에 기록할 수 있으므로 어떻게 동기화 처리할지 고민 필요.
+    pass
+
 
 async def extract_fields_from_text(
     page_text: str, keys: list[str] = FIELDS_DESCRIPTION.keys()

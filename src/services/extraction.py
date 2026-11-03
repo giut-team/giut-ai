@@ -1,3 +1,5 @@
+# TODO: 링크 추출 상태 확인 및 official만 가져오기 (신청폼, sns 제외)
+
 import re
 import asyncio
 import logging

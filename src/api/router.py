@@ -25,5 +25,5 @@ async def extract_competition(request: CompetitionExtractRequest):
         return await extract_contest_korea_page(page)
 
     result, _ = await run_pipeline(request.url)
-    # TODO: 예외처리 형식 정하기
+
     return result
