@@ -233,8 +233,7 @@ class HtmlParser:
 
     def parse(self, content: str | bytes, base_url: str = "") -> ParsedPage:
         """HTML -> 노이즈 제거 -> 남은 본문만 블록 단위로 분리 -> feature dict 생성.
-        images, links 구할 때 상대경로(href/src)를 절대 URL로 변환하기 위해 base_url 필요"""
-
+        images 구할 때 상대경로(href/src)를 절대 URL로 변환하기 위해 base_url 필요"""
         soup = BeautifulSoup(content, features="html.parser")
 
         self._remove_noise(soup)
@@ -254,25 +253,24 @@ class HtmlParser:
         image_blocks: list[dict] = []
         link_blocks: list[dict] = []
 
-        # 각 블록을 feature dict 로 만든 뒤 img / a / 그 외(텍스트) 리스트로 분리
+        # 각 블록을 feature dict 로 만든 뒤 img / 그 외(텍스트) 리스트로 분리
         for index, tag in enumerate(units):
             feat = self._block_features(tag, index, total)
 
-            if tag.name == "img":
+            if tag.name == "a":
+                continue
+            elif tag.name == "img":
                 src = self._img_src(tag)
                 if not src:
                     continue
                 feat["src"] = urljoin(base_url, src) if base_url else src
                 image_blocks.append(feat)
-            elif tag.name == "a":
-                href = (tag.get("href") or "").strip()
-                if not self._is_navigable(href):
-                    continue
-                feat["href"] = urljoin(base_url, href) if base_url else href
-                link_blocks.append(feat)
             else:
                 if not feat["text"]:
                     continue
+                if feat.get("urls"):
+                    feat["context"] = text_blocks[-1]["text"] if text_blocks else ""
+                    link_blocks.append(feat)
                 text_blocks.append(feat)
 
         image_blocks = self._calculate_image_relative_area(image_blocks)
@@ -329,7 +327,6 @@ class HtmlParser:
     def _looks_like_csr_shell(self, content: bytes) -> bool:
         """정적 fetch 결과에서 script/style/noscript 제외 body 텍스트가 threshold 미만이면
         CSR(root div 안의 콘텐츠는 JS 실행으로 채우는 형태)로 판단, 렌더링 fetch로 재시도"""
-
         CSR_SHELL_TEXT_THRESHOLD = 200
 
         soup = BeautifulSoup(content, features="html.parser")
@@ -416,8 +413,7 @@ class HtmlParser:
             block_text = self._normalize((tag.get("alt") or "").strip())
             links_in = []
         elif tag.name == "a":
-            block_text = self._normalize(tag.get_text(" ", strip=True))
-            links_in = []
+            return {"tag": "a"}
         else:
             # 하위 블록의 텍스트/링크는 빼고 해당 블록의 직속 텍스트만 합치기
             block_text = self._own_text(tag)
@@ -437,6 +433,14 @@ class HtmlParser:
                 "rel_pos": block_index / max(total_blocks, 1),
             },
         }
+
+        if links_in:
+            # 링크(a 태그)가 어느 텍스트에 있는지 정보를 함께 추출
+            features["urls"] = {}
+            for a in links_in:
+                href = (a.get("href") or "").strip()
+                if self._is_navigable(href):
+                    features["urls"].update({a.get_text(" ", strip=True): href})
 
         if tag.name == "img":
             # 이미지 원본/브라우저 표시 사이즈 피처 추가
@@ -519,11 +523,15 @@ class HtmlParser:
 if __name__ == "__main__":
     import json
     import sys
+    import asyncio
 
-    target_url = sys.argv[1] if len(sys.argv) > 1 else input("URL: ").strip()
-    with HtmlParser() as parser:
-        result = parser.parse_url(target_url)
-    print(json.dumps(result.to_dict(), ensure_ascii=False, indent=2))
-    print(
-        f"text: {len(result.text)} / images: {len(result.images)} / links: {len(result.links)}"
-    )
+    async def main():
+        target_url = sys.argv[1] if len(sys.argv) > 1 else input("URL: ").strip()
+        async with HtmlParser() as parser:
+            result = await parser.parse_url(target_url)
+        print(json.dumps(result.to_dict(), ensure_ascii=False, indent=2))
+        print(
+            f"text: {len(result.text)} / images: {len(result.images)} / links: {len(result.links)}"
+        )
+
+    asyncio.run(main())

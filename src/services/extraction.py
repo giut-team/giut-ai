@@ -1,5 +1,3 @@
-# TODO: 링크 추출 상태 확인 및 official만 가져오기 (신청폼, sns 제외)
-
 import re
 import asyncio
 import logging
@@ -27,6 +25,54 @@ MODEL_DIR = Path(__file__).resolve().parents[2] / "models"
 TEXT_SCALER_PATH = MODEL_DIR / "text_classifier" / "num_scaler_v1.joblib"
 TEXT_CLASSIFIER_PATH = MODEL_DIR / "text_classifier" / "text_classifier_head_v1.pt"
 IMAGE_CLASSIFIER_PATH = MODEL_DIR / "image_classifier" / "image_classifier.pt"
+
+SNS_DOMAINS = {
+    "instagram.com",
+    "facebook.com",
+    "fb.com",
+    "x.com",
+    "twitter.com",
+    "blog.naver.com",
+    "band.us",
+    "youtube.com",
+    "youtu.be",
+    "pinterest.com",
+    "pin.it",
+    "kakao.com",
+    "tistory.com",
+    "google.com",
+    "naver.com",
+    "openstreetmap.org",  # 온오프믹스
+    "stibee.com",  # 온오프믹스
+    "catchsecu.com",  # 온오프믹스
+}
+APPLY_PATH_KEYWORDS = {"form", "forms", "apply"}  # TODO: 신청폼 키워드 더 찾아보기
+
+
+OFFICIAL_PAGE_KEYWORDS = {
+    "홈페이지",
+    "주최사",
+    "공고",
+    "바로가기",
+    "공식",
+    "모집",
+    "상세",
+    "자세",
+}
+
+IRRELEVANT_KEYWORDS = {
+    "지원",
+    "신청",
+    "접수",
+    "첨부",
+    "파일",
+    r"오시는\s길",
+    *SNS_DOMAINS,
+    *APPLY_PATH_KEYWORDS,
+}
+
+DACON_HOSTNAME = "dacon.io"  # 데이콘
+DAKER_HOSTNAME = "daker.ai"  # 데이커
 
 
 @lru_cache(maxsize=1)
@@ -72,18 +118,115 @@ def is_eligible_activity(extracted_fields: dict) -> bool:
     return True
 
 
-def filter_official_url(source_url: str) -> str:
-    pass
+def _normalize_hostname(url: str) -> str:
+    """도메인 비교를 위해 호스트를 소문자로 바꾸고 선행 www. 제거"""
+    return (urlparse(url).hostname or "").lower().removeprefix("www.")
+
+
+def _filter_official_url(link_blocks: list[dict], source_url: str) -> str | None:
+    """링크 목록 중 주최사 공식 홈페이지를 찾아 반환 (연관 공모전, 신청 폼, 주최사 SNS 등 제외)"""
+    candidate_urls = []
+    source_domain = _normalize_hostname(source_url)
+
+    for block in link_blocks:
+        urls = block.get("urls")
+        if urls is None:
+            continue
+
+        for text, url in urls.items():
+            if not re.match(r"^https?:\/\/", url):
+                continue
+
+            domain = _normalize_hostname(url)
+            if re.search(domain, source_domain) or re.search(source_domain, domain):
+                # 같은 도메인(연관공모전, 공모전 사이트 자체 게시판 페이지 등) 제외
+                if url.find("linkclick") == -1:
+                    # 캠퍼스픽 redirect 경로는 포함
+                    continue
+            if (source_domain == DACON_HOSTNAME and domain == DAKER_HOSTNAME) or (
+                source_domain == DAKER_HOSTNAME and domain == DACON_HOSTNAME
+            ):
+                # 데이콘-데이커 (연관 플랫폼) 필터링
+                continue
+
+            if any(re.search(sns, _normalize_hostname(url)) for sns in SNS_DOMAINS):
+                continue  # SNS 주소 제외
+            if any(re.search(keyword, url) for keyword in APPLY_PATH_KEYWORDS):
+                continue  # 신청폼 주소 제외
+
+            has_official_keyword = any(
+                re.search(keyword, text) for keyword in OFFICIAL_PAGE_KEYWORDS
+            )
+            has_official_inline_keyword = any(
+                re.search(keyword, block["text"]) for keyword in OFFICIAL_PAGE_KEYWORDS
+            )
+            has_official_context_keyword = any(
+                re.search(keyword, block["context"])
+                for keyword in OFFICIAL_PAGE_KEYWORDS
+            )
+
+            has_irrelevant_keyword = any(
+                re.search(keyword, text) for keyword in IRRELEVANT_KEYWORDS
+            )
+            has_irrelevant_inline_keyword = any(
+                re.search(keyword, block["text"]) for keyword in IRRELEVANT_KEYWORDS
+            )
+            has_irrelevant_context_keyword = any(
+                re.search(keyword, block["context"]) for keyword in IRRELEVANT_KEYWORDS
+            )
+
+            if (
+                has_irrelevant_keyword
+                or (not has_official_keyword and has_irrelevant_inline_keyword)
+                or (
+                    not has_official_keyword
+                    and not has_irrelevant_inline_keyword
+                    and has_irrelevant_context_keyword
+                )
+            ):
+                # irrelevant 키워드가 있으면 추출하지 않음(a 태그 자체 텍스트 -> 해당 라인의 텍스트 -> 이전 문맥 순으로 비교)
+                continue
+
+            candidate_level = (
+                1
+                if has_official_keyword
+                else (
+                    2
+                    if (not has_official_keyword and has_official_inline_keyword)
+                    else (
+                        3
+                        if (
+                            not has_official_keyword
+                            and not has_official_inline_keyword
+                            and has_official_context_keyword
+                        )
+                        else 4
+                    )
+                )
+            )
+
+            candidate_urls.append({"url": url, "candidate_level": candidate_level})
+
+    for level in range(1, 5):
+        result = list(
+            {url["url"] for url in candidate_urls if url["candidate_level"] == level}
+        )
+        if result:
+            break
+
+    if len(result) == 0:
+        return None
+    elif len(result) > 1:
+        result = sorted(result, key=len)
+    return result[0]
 
 
 def _load_page_text(blocks: list[dict]) -> str:
     page_text = ""
-
     for b in blocks:
         block_text = b.get("text", None)
         if block_text is not None:
             page_text += block_text + "\n"
-
     return page_text
 
 
@@ -106,7 +249,6 @@ def _download_image(url: str, timeout: float = 30.0) -> Image:
 
 def run_text_classifier(text_blocks: list[dict]):
     relevant_blocks = []
-
     scaler, classifier, _ = get_models()
 
     with torch.inference_mode():
@@ -184,6 +326,11 @@ async def run_pipeline(url: str, use_classifier: bool = True):
     extracted_fields = extracted_fields.to_dict()
     extracted_fields["source_url"] = url  # 수집 경로 url 추가
 
+    extracted_fields["urls"] = [
+        {"type": "SOURCE_ORIGINAL", "url": url},
+        {"type": "OFFICIAL", "url": _filter_official_url(links, url)},
+    ]  # 수집 경로 및 공식 홈페이지 URL 추가
+
     if not is_eligible_activity(extracted_fields):
         return extracted_fields, usage
 
@@ -222,22 +369,6 @@ async def run_pipeline(url: str, use_classifier: bool = True):
         for key, value in image_extracted_fields.items():
             if value is not None:
                 extracted_fields[key] = value
-
-    # TODO: 공식 페이지 url만 가져오도록 수정
-    relevant_links = {url}
-    domain = (urlparse(url).hostname or "").lower()
-
-    for link in links:
-        # 같은 도메인(연관공모전, 공모전 사이트 자체 게시판 페이지 등) 제외
-        if (urlparse(link["href"]).hostname or "").lower() != domain:
-            relevant_links.add(link["href"])
-
-    for link_text in re.findall(r"https://[^\s]+", page_text):
-        # 본문에 a 태그가 아닌 일반 텍스트로 포함된 링크 찾기
-        if (urlparse(link_text).hostname or "").lower() != domain:
-            relevant_links.add(link_text)
-
-    extracted_fields["links"] = relevant_links
 
     return extracted_fields, usage
 
