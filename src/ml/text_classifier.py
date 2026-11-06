@@ -11,7 +11,7 @@ encoder = AutoModel.from_pretrained("klue/roberta-base")
 
 
 def tokenize(blocks: list[dict], max_length: int = MAX_LENGTH):
-    # class_id [SEP] text 순서로 토큰화, 패딩은 배치 내 최대 길이에 맞춤
+    """class_id [SEP] text 순서로 토큰화, 패딩은 배치 내 최대 길이에 맞춤"""
     class_ids = [b.get("class_id", "") for b in blocks]
     texts = [b.get("text", "") for b in blocks]
 
@@ -50,7 +50,7 @@ class TextClassifier(nn.Module):
         self.enc.eval()
 
     def logits(self, ids, mask, num):
-        # 텍스트 인코딩 결과와 수치 피처를 붙여 함께 학습
+        """텍스트 인코딩 결과와 수치 피처를 붙여 함께 학습"""
         cls = self.enc(input_ids=ids, attention_mask=mask).last_hidden_state[:, 0]
         return self.head(torch.cat([cls, num], dim=-1))
 

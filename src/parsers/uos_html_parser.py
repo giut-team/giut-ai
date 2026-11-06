@@ -1,4 +1,4 @@
-# 시립대 개별 공지의 제목, 본문, 이미지 추출
+"""시립대 개별 공지의 제목, 본문, 이미지 추출"""
 
 from urllib.parse import parse_qs, urljoin, urlsplit, urlunsplit
 
@@ -24,14 +24,14 @@ def _parse_uos_html(html: str, url: str) -> dict[str, str | list[str]]:
     ]
     return {
         "title": " ".join(title_node.get_text().split()),
-        "link": url,
+        "source_url": url,
         "body": _html_to_text(str(body_node)),
         "images": images,
     }
 
 
 def parse_uos_html(url: str, timeout: float = 30) -> dict[str, str | list[str]]:
-    # 개별 공지 URL 요청 및 제목, 본문, 이미지 추출
+    """개별 공지 URL 요청 및 제목, 본문, 이미지 추출"""
     url = url.strip()
     parts = urlsplit(url)
     query = parts.query

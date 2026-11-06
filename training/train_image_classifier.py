@@ -24,6 +24,8 @@ THRESHOLD = 0.5
 NUM_WORKERS = 0
 
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".bmp"}
+
+
 # def is_supported_image(image_path):
 #     # Reject transparent icons and images too large for safe decoding."""
 #     try:
@@ -56,7 +58,7 @@ class ImageDataset(Dataset):
 
 @torch.no_grad()
 def evaluate(classifier, data_loader, threshold=THRESHOLD):
-    # 이미지 validation set의 accuracy, precision, recall, F1, F2, 혼동행렬 계산
+    """이미지 validation set의 accuracy, precision, recall, F1, F2, 혼동행렬 계산"""
     was_training = classifier.training
     classifier.eval()
 
@@ -118,7 +120,7 @@ def load_samples():
 
 
 def split_samples(samples):
-    # 정답 클래스별로 나눠 train/val의 클래스 비율 최대한 유지
+    """정답 클래스별로 나눠 train/val의 클래스 비율 최대한 유지"""
     rng = random.Random(SEED)
     by_label = {0: [], 1: []}
     for sample in samples:

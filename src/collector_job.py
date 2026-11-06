@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 async def collect_and_post(x_ai_api_key: str) -> None:
-    # 시립대 공지 및 콘테스트코리아에서 추출한 결과 리스트 전체 전송
+    """시립대 공지 및 콘테스트코리아에서 추출한 결과 리스트 전체 전송"""
     uos_results, contest_korea_results = await asyncio.gather(
         collect_uos(), collect_contest_korea()
     )
@@ -21,7 +21,7 @@ async def collect_and_post(x_ai_api_key: str) -> None:
 
 
 async def run_daily_collector(x_ai_api_key: str) -> None:
-    # 매일 자정에 공모전 정보 수집 후 전송
+    """매일 자정에 시립대 공지 및 콘테스트코리아에서 공모전 정보 수집 후 전송"""
     if not x_ai_api_key or not x_ai_api_key.strip():
         raise ValueError("X-AI-API-Key must be provided")
 

@@ -10,6 +10,7 @@ from src.api.exceptions import register_exception_handlers
 from src.api.router import router
 from src.collector_job import run_daily_collector
 from src.services.extraction import get_models
+from src.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -19,13 +20,13 @@ async def lifespan(app: FastAPI):
     get_models()
 
     load_dotenv()
-    bearer_token = os.getenv("GIUT_BEARER_TOKEN", "")
+    x_ai_api_key = settings.X_AI_API_KEY
     collector_task = None
 
-    if bearer_token.strip():
-        collector_task = asyncio.create_task(run_daily_collector(bearer_token))
+    if x_ai_api_key.strip():
+        collector_task = asyncio.create_task(run_daily_collector(x_ai_api_key))
     else:
-        logger.warning("GIUT_BEARER_TOKEN이 없어 정기 수집 작업을 시작하지 않습니다.")
+        logger.warning("X_AI_API_KEY가 없어 정기 수집 작업을 시작하지 않습니다.")
 
     try:
         yield

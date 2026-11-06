@@ -3,7 +3,7 @@ import json
 
 import pytest
 
-from src.services.extraction import load_page_text, run_pipeline
+from src.services.extraction import _load_page_text, run_pipeline
 from src.llm.dto import ExtractedFields
 from src.llm.field_extractor import (
     extract_fields_from_text,
@@ -76,7 +76,7 @@ async def test_extract_fields():
 
     try:
         for id, blocks in page_blocks.items():
-            page_text = load_page_text(blocks)
+            page_text = _load_page_text(blocks)
 
             started_at = datetime.now()
             fields_result, usage = await extract_fields_from_text(page_text)

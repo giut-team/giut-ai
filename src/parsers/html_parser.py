@@ -111,7 +111,8 @@ class UnsafeURLError(ValueError):
 
 @dataclass
 class ParsedPage:
-    # text / images / links 모두 (구조 블록 / 링크 / 이미지) 단위 feature dict 리스트
+    """text / images / links 모두 (구조 블록 / 링크 / 이미지) 단위 feature dict 리스트"""
+
     text: list[dict] = field(default_factory=list)
     images: list[dict] = field(default_factory=list)
     links: list[dict] = field(default_factory=list)
@@ -130,7 +131,7 @@ class HtmlParser:
         self._browser = None
 
     async def close(self) -> None:
-        # 렌더링용 브라우저를 띄운 적이 있다면 정리. 앱 또는 with block 종료 시 호출
+        """렌더링용 브라우저를 띄운 적이 있다면 정리. 앱 또는 with block 종료 시 호출"""
         if self._browser is not None:
             await self._browser.close()
             self._browser = None
@@ -145,8 +146,8 @@ class HtmlParser:
         await self.close()
 
     async def fetch(self, url: str, render: bool | str = True) -> bytes:
-        # url 요청 -> HTML 원문(bytes)을 반환
-        # parse()의 BeautifulSoup에서 디코딩 (<meta charset> / BOM / 헤더 종합 판단)
+        """url 요청 -> HTML 원문(bytes)을 반환,
+        parse()의 BeautifulSoup에서 디코딩 (<meta charset> / BOM / 헤더 종합 판단)"""
 
         if render is True:
             return await self._fetch_rendered(url)
@@ -159,8 +160,8 @@ class HtmlParser:
         return content
 
     def _fetch_static(self, url: str) -> bytes:
-        # 리다이렉트를 자동으로 따라가면 (allow_redirects=True)
-        # 검증된 URL이 내부망으로 리다이렉트되는 SSRF 우회를 놓칠 수 있어 매 홉마다 직접 검증
+        """리다이렉트를 자동으로 따라가면 (allow_redirects=True)
+        검증된 URL이 내부망으로 리다이렉트되는 SSRF 우회를 놓칠 수 있어 매 홉마다 직접 검증"""
         for _ in range(MAX_REDIRECTS + 1):
             self._validate_url(url)
             try:
@@ -187,7 +188,7 @@ class HtmlParser:
         raise UnsafeURLError(f"too many redirects while fetching {url!r}")
 
     async def _fetch_rendered(self, url: str) -> bytes:
-        # Playwright로 페이지를 열어 JS 실행이 끝난 뒤(networkidle) DOM을 그대로 가져온다.
+        """Playwright로 페이지를 열어 JS 실행이 끝난 뒤(domcontentloaded) DOM 반환"""
         self._validate_url(url)
         browser = await self._ensure_browser()  # 브라우저가 열려 있으면 재사용
 
@@ -217,7 +218,10 @@ class HtmlParser:
                     html = await page.content()
                     break
                 except PlaywrightError as exc:
-                    if "Execution context was destroyed" not in str(exc) or attempt == 2:
+                    if (
+                        "Execution context was destroyed" not in str(exc)
+                        or attempt == 2
+                    ):
                         raise
                     await page.wait_for_load_state(
                         "domcontentloaded", timeout=self.timeout * 1000
@@ -228,9 +232,8 @@ class HtmlParser:
         return html.encode("utf-8")
 
     def parse(self, content: str | bytes, base_url: str = "") -> ParsedPage:
-        # HTML -> 노이즈 제거 -> 남은 본문만 블록 단위로 분리 -> feature dict 생성
-        # images, links 구할 때 상대경로(href/src)를 절대 URL로 변환하기 위해 base_url 필요
-
+        """HTML -> 노이즈 제거 -> 남은 본문만 블록 단위로 분리 -> feature dict 생성.
+        images 구할 때 상대경로(href/src)를 절대 URL로 변환하기 위해 base_url 필요"""
         soup = BeautifulSoup(content, features="html.parser")
 
         self._remove_noise(soup)
@@ -250,25 +253,24 @@ class HtmlParser:
         image_blocks: list[dict] = []
         link_blocks: list[dict] = []
 
-        # 각 블록을 feature dict 로 만든 뒤 img / a / 그 외(텍스트) 리스트로 분리
+        # 각 블록을 feature dict 로 만든 뒤 img / 그 외(텍스트) 리스트로 분리
         for index, tag in enumerate(units):
             feat = self._block_features(tag, index, total)
 
-            if tag.name == "img":
+            if tag.name == "a":
+                continue
+            elif tag.name == "img":
                 src = self._img_src(tag)
                 if not src:
                     continue
                 feat["src"] = urljoin(base_url, src) if base_url else src
                 image_blocks.append(feat)
-            elif tag.name == "a":
-                href = (tag.get("href") or "").strip()
-                if not self._is_navigable(href):
-                    continue
-                feat["href"] = urljoin(base_url, href) if base_url else href
-                link_blocks.append(feat)
             else:
                 if not feat["text"]:
                     continue
+                if feat.get("urls"):
+                    feat["context"] = text_blocks[-1]["text"] if text_blocks else ""
+                    link_blocks.append(feat)
                 text_blocks.append(feat)
 
         image_blocks = self._calculate_image_relative_area(image_blocks)
@@ -283,8 +285,8 @@ class HtmlParser:
     # -- 내부 동작 (fetch) -------------------------------------------------
 
     def _validate_url(self, url: str) -> None:
-        # SSRF 방지: http(s)만 허용하고, 호스트가 가리키는 IP가 전부 공인 IP인 경우만 통과.
-        # (localhost, 사설 IP 대역, 169.254.169.254 같은 클라우드 메타데이터 주소 등을 차단)
+        """SSRF 방지: http(s)만 허용하고, 호스트가 가리키는 IP가 전부 공인 IP인 경우만 통과.
+        (localhost, 사설 IP 대역, 169.254.169.254 같은 클라우드 메타데이터 주소 등을 차단)"""
         parsed = urlparse(url)
         if parsed.scheme not in ALLOWED_SCHEMES:
             raise UnsafeURLError(f"disallowed scheme: {parsed.scheme!r}")
@@ -323,9 +325,8 @@ class HtmlParser:
         return self._browser
 
     def _looks_like_csr_shell(self, content: bytes) -> bool:
-        # 정적 fetch 결과에서 script/style/noscript 제외 body 텍스트가 threshold 미만이면
-        # CSR(root div 안의 콘텐츠는 JS 실행으로 채우는 형태)로 판단, 렌더링 fetch로 재시도
-
+        """정적 fetch 결과에서 script/style/noscript 제외 body 텍스트가 threshold 미만이면
+        CSR(root div 안의 콘텐츠는 JS 실행으로 채우는 형태)로 판단, 렌더링 fetch로 재시도"""
         CSR_SHELL_TEXT_THRESHOLD = 200
 
         soup = BeautifulSoup(content, features="html.parser")
@@ -339,7 +340,7 @@ class HtmlParser:
 
     @staticmethod
     def _split_on_br(soup: BeautifulSoup) -> None:
-        # <br> 태그를 만나면 부모 태그 2개로 분리
+        """<br> 태그를 만나면 부모 태그 2개로 분리"""
         for br in list(soup.find_all("br")):
             parent = br.parent
             if parent is None:
@@ -405,15 +406,14 @@ class HtmlParser:
         return " > ".join(reversed(parts))
 
     def _block_features(self, tag, block_index: int, total_blocks: int) -> dict:
-        # 이 블록 태그의 조상 id/class
+        """이 블록 태그의 조상 id/class"""
         class_id = self._ancestor_id(tag)
 
         if tag.name == "img":
             block_text = self._normalize((tag.get("alt") or "").strip())
             links_in = []
         elif tag.name == "a":
-            block_text = self._normalize(tag.get_text(" ", strip=True))
-            links_in = []
+            return {"tag": "a"}
         else:
             # 하위 블록의 텍스트/링크는 빼고 해당 블록의 직속 텍스트만 합치기
             block_text = self._own_text(tag)
@@ -434,6 +434,14 @@ class HtmlParser:
             },
         }
 
+        if links_in:
+            # 링크(a 태그)가 어느 텍스트에 있는지 정보를 함께 추출
+            features["urls"] = {}
+            for a in links_in:
+                href = (a.get("href") or "").strip()
+                if self._is_navigable(href):
+                    features["urls"].update({a.get_text(" ", strip=True): href})
+
         if tag.name == "img":
             # 이미지 원본/브라우저 표시 사이즈 피처 추가
             features["size"] = {}
@@ -453,7 +461,7 @@ class HtmlParser:
         return features
 
     def _calculate_image_relative_area(self, image_blocks: list[dict]) -> list[dict]:
-        # 사이트 내 표시되는 이미지 상대 면적 구하기
+        """사이트 내 표시되는 이미지 상대 면적 구하기"""
         image_areas = []
         for ib in image_blocks:
             display_area = ib["size"]["display_width"] * ib["size"]["display_height"]
@@ -473,7 +481,7 @@ class HtmlParser:
 
     @staticmethod
     def _is_own(block, node) -> bool:
-        # node(문자열 or 태그)와 block 사이에 다른 블록이 없으면 True
+        """node(문자열 or 태그)와 block 사이에 다른 블록이 없으면 True"""
         parent = node.parent
         while parent is not None and parent is not block:
             if parent.name in BLOCK_TAGS:
@@ -482,7 +490,7 @@ class HtmlParser:
         return parent is block
 
     def _own_text(self, block) -> str:
-        # 블록의 직속 텍스트/인라인 요소만 모아주기 (중첩된 하위 블록 안의 텍스트는 제외)
+        """블록의 직속 텍스트/인라인 요소만 모아주기 (중첩된 하위 블록 안의 텍스트는 제외)"""
         parts = [
             str(s)
             for s in block.descendants
@@ -515,11 +523,15 @@ class HtmlParser:
 if __name__ == "__main__":
     import json
     import sys
+    import asyncio
 
-    target_url = sys.argv[1] if len(sys.argv) > 1 else input("URL: ").strip()
-    with HtmlParser() as parser:
-        result = parser.parse_url(target_url)
-    print(json.dumps(result.to_dict(), ensure_ascii=False, indent=2))
-    print(
-        f"text: {len(result.text)} / images: {len(result.images)} / links: {len(result.links)}"
-    )
+    async def main():
+        target_url = sys.argv[1] if len(sys.argv) > 1 else input("URL: ").strip()
+        async with HtmlParser() as parser:
+            result = await parser.parse_url(target_url)
+        print(json.dumps(result.to_dict(), ensure_ascii=False, indent=2))
+        print(
+            f"text: {len(result.text)} / images: {len(result.images)} / links: {len(result.links)}"
+        )
+
+    asyncio.run(main())

@@ -1,4 +1,4 @@
-# 서울시립대학교 RSS에서 제목, 원문 링크, 본문 텍스트, 게시일, 이미지 src 추출
+"""서울시립대학교 RSS에서 제목, 원문 링크, 본문 텍스트, 게시일, 이미지 src 추출"""
 
 import json
 import re
@@ -47,7 +47,7 @@ def _html_to_text(html: str) -> str:
 
 
 def _extract_image_sources(html: str) -> list[str]:
-    # 본문 내 <img> 태그에서 src 링크 모두 추출
+    """본문 내 <img> 태그에서 src 링크 모두 추출"""
     soup = BeautifulSoup(html, "html.parser")
     return [
         src for image in soup.find_all("img", src=True) if (src := image["src"].strip())
@@ -73,7 +73,7 @@ def parse_uos_rss(url: str, timeout: float = 30) -> list[dict[str, str | list[st
     return [
         {
             "title": entry.get("title", "").strip(),
-            "link": entry.get("link", "").strip(),
+            "source_url": entry.get("link", "").strip(),
             "body": _html_to_text(entry.get("summary", "")),
             "published_date": entry.get("published", "").strip(),
             "images": _extract_image_sources(entry.get("summary", "")),

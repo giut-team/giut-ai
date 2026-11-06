@@ -1,4 +1,4 @@
-# 콘테스트코리아 상세 페이지의 테이블 내용, 포스터 URL 추출
+"""콘테스트코리아 상세 페이지의 테이블 내용, 포스터 URL 추출"""
 
 from __future__ import annotations
 
@@ -10,6 +10,7 @@ from urllib.parse import parse_qs, urljoin, urlparse
 import requests
 from bs4 import BeautifulSoup, Tag
 
+from src.services.constants import UrlType
 from src.llm.dto import TargetParticipantsEnum, ActivityKindEnum, CategoryEnum
 
 CATEGORY_MAPPINGS = {
@@ -42,18 +43,18 @@ def _absolute_url(value: str | None, base_url: str) -> str | None:
     return resolved if urlparse(resolved).scheme in {"http", "https"} else None
 
 
-def _link(node: Tag | None, base_url: str) -> str | None:
+def _link(node: Tag | None) -> str | None:
     if node is None:
         return None
     for anchor in node.select("a"):
         # 홈페이지 버튼은 href="javascript:void(0)"이고 실제 주소는 val2에 있음
         for attribute in ("val2", "href"):
-            url = _absolute_url(anchor.get(attribute), base_url)
-            if url:
+            url = anchor.get(attribute)
+            if url and re.match(r"https?://\S+$", url):
                 return url
     text = _text(node)
     if text and re.match(r"https?://\S+$", text):
-        return _absolute_url(text, base_url)
+        return text
     return None
 
 
@@ -209,6 +210,7 @@ def parse_contest_korea_html(
                 break
 
     full_text, detail_image_links = _detail(soup, base_url, main_image_link)
+    official_url = _link(field("홈페이지"))
 
     return {
         "title": title,
@@ -226,9 +228,11 @@ def parse_contest_korea_html(
         "full_text": full_text,
         "main_image_link": main_image_link,
         "detail_image_links": detail_image_links,
-        "source_url": base_url,
-        "homepage_link": _link(field("홈페이지"), base_url),
-        "application_link": _link(field("접수하기"), base_url),
+        "urls": [
+            {"type": UrlType.SOURCE_ORIGINAL, "url": base_url},
+            {"type": UrlType.OFFICIAL, "url": official_url},
+        ],
+        # "application_link": _link(field("접수하기")),
     }
 
 
