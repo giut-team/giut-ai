@@ -65,16 +65,19 @@ def _uos_link_context_blocks(full_text: str) -> list[dict]:
     for line in full_text.split("\n"):
         urls_iter = {
             *re.finditer(
-                r"https?:\/\/(?:[\w-]+\.)+[\w-]+(?::\d+)?(?:[\/?#][^\s]*)?", line
+                r"(https?:\/\/)(?:[\w-]+\.)+[\w-]+(?::\d+)?(?:[\/?#][^\s]*)?", line
             ),
-            *re.finditer(r"www\.(?:[\w-]+\.)+[\w-]+(?::\d+)?(?:[\/?#][^\s]*)?", line),
         }
         next_idx = 0
         for i in sorted(urls_iter, key=lambda i: i.start()):
             start, end = i.span()
-            text = line[next_idx:start].strip()
             blocks.append(
-                {"url": line[start:end], "text": text, "line": line, "context": ""}
+                {
+                    "url": line[start:end].strip(),
+                    "text": line[next_idx:start].strip(),
+                    "line": line,
+                    "context": "",
+                }
             )
             next_idx = end
     return blocks
