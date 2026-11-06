@@ -42,9 +42,9 @@ SNS_DOMAINS = {
     "tistory.com",
     "google.com",
     "naver.com",
-    "openstreetmap.org",  # 온오프믹스
-    "stibee.com",  # 온오프믹스
-    "catchsecu.com",  # 온오프믹스
+    "openstreetmap.org",  # 이벤터스
+    "stibee.com",  # 이벤터스
+    "catchsecu.com",  # 이벤터스
 }
 APPLY_PATH_KEYWORDS = {"form", "forms", "apply"}  # TODO: 신청폼 키워드 더 찾아보기
 

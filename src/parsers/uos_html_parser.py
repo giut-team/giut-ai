@@ -24,7 +24,7 @@ def _parse_uos_html(html: str, url: str) -> dict[str, str | list[str]]:
     ]
     return {
         "title": " ".join(title_node.get_text().split()),
-        "link": url,
+        "source_url": url,
         "body": _html_to_text(str(body_node)),
         "images": images,
     }

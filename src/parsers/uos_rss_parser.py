@@ -73,7 +73,7 @@ def parse_uos_rss(url: str, timeout: float = 30) -> list[dict[str, str | list[st
     return [
         {
             "title": entry.get("title", "").strip(),
-            "link": entry.get("link", "").strip(),
+            "source_url": entry.get("link", "").strip(),
             "body": _html_to_text(entry.get("summary", "")),
             "published_date": entry.get("published", "").strip(),
             "images": _extract_image_sources(entry.get("summary", "")),
