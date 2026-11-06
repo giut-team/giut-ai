@@ -105,7 +105,7 @@ def _link_context_blocks(link_blocks: list[dict]) -> list[dict]:
 
 def _normalize_hostname(url: str) -> str:
     """도메인 비교를 위해 호스트를 소문자로 바꾸고 선행 www. 제거"""
-    return (urlparse(url).hostname or "").lower().removeprefix("www.")
+    return (urlparse(url).hostname or "").lower().removeprefix("www.").strip()
 
 
 def filter_official_url(blocks: list[dict], source_url: str) -> str | None:
@@ -118,12 +118,12 @@ def filter_official_url(blocks: list[dict], source_url: str) -> str | None:
         domain = _normalize_hostname(url)
         if re.search(domain, source_domain) or re.search(source_domain, domain):
             # 같은 도메인(연관공모전, 공모전 사이트 자체 게시판 페이지 등) 제외
-            if domain == CAMPUSPICK_HOSTNAME:
-                if url.find("linkclick") == -1:
-                    continue  # 캠퍼스픽 redirect 경로는 포함
-            elif domain == UOS_HOSTNAME or source_domain == UOS_HOSTNAME:
+            if domain == UOS_HOSTNAME or source_domain == UOS_HOSTNAME:
                 if domain == source_domain:
                     continue  # UOS 공지는 도메인 완전 일치할 경우에만 제외
+            elif domain == CAMPUSPICK_HOSTNAME:
+                if url.find("linkclick") == -1:
+                    continue  # 캠퍼스픽 redirect 경로는 포함
             else:
                 continue
         if (source_domain == DACON_HOSTNAME and domain == DAKER_HOSTNAME) or (

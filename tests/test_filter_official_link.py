@@ -13,7 +13,10 @@ from src.services.collector import (
     UOS_RSS_HAKSA,
     _uos_link_context_blocks,
 )
-from src.services.extraction import _link_context_blocks, filter_official_url
+from src.services.extraction import (
+    _link_context_blocks,
+    filter_official_url,
+)
 
 
 def test_filter_official_url():
