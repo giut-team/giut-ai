@@ -9,7 +9,11 @@ from zoneinfo import ZoneInfo
 import requests
 from bs4 import BeautifulSoup
 
-from src.services.extraction import is_eligible_activity
+from src.services.constants import UrlType
+from src.services.extraction import (
+    filter_official_url,
+    is_eligible_activity,
+)
 from src.llm.field_extractor import extract_fields_from_text, extract_fields_from_images
 from src.llm.prompts import FIELDS_DESCRIPTION
 from src.parsers.uos_rss_parser import parse_uos_rss
@@ -56,6 +60,26 @@ def _published_on_date(page: dict, target_date: date) -> bool:
     return published_at.astimezone(SEOUL_TIMEZONE).date() == target_date
 
 
+def _uos_link_context_blocks(full_text: str) -> list[dict]:
+    blocks = []
+    for line in full_text.split("\n"):
+        urls_iter = {
+            *re.finditer(
+                r"https?:\/\/(?:[\w-]+\.)+[\w-]+(?::\d+)?(?:[\/?#][^\s]*)?", line
+            ),
+            *re.finditer(r"www\.(?:[\w-]+\.)+[\w-]+(?::\d+)?(?:[\/?#][^\s]*)?", line),
+        }
+        next_idx = 0
+        for i in sorted(urls_iter, key=lambda i: i.start()):
+            start, end = i.span()
+            text = line[next_idx:start].strip()
+            blocks.append(
+                {"url": line[start:end], "text": text, "line": line, "context": ""}
+            )
+            next_idx = end
+    return blocks
+
+
 async def extract_uos_page(page: dict) -> dict:
     page_text = page["title"] + "\n" + page["body"]
     # 제목을 RSS피드에서 이미 제공하므로 추출할 키에서 제외
@@ -65,7 +89,15 @@ async def extract_uos_page(page: dict) -> dict:
     extracted_fields, usage = await extract_fields_from_text(page_text, keys)
     extracted_fields = extracted_fields.to_dict()
     extracted_fields["title"] = page["title"]
-    extracted_fields["source_url"] = page["link"]
+    extracted_fields["urls"] = [
+        {"type": UrlType.SOURCE_ORIGINAL, "url": page["source_url"]},
+        {
+            "type": UrlType.OFFICIAL,
+            "url": filter_official_url(
+                _uos_link_context_blocks(page_text), page["source_url"]
+            ),
+        },
+    ]
 
     if not is_eligible_activity(extracted_fields):
         return extracted_fields
@@ -78,12 +110,8 @@ async def extract_uos_page(page: dict) -> dict:
         for key, value in image_extracted_fields.to_dict().items():
             if value is not None:
                 extracted_fields[key] = value
-
     extracted_fields["images"] = page["images"]
-    extracted_fields["links"] = {
-        page["link"],
-        *re.findall(r"https://[^\s]+", page_text),
-    }
+
     return extracted_fields
 
 

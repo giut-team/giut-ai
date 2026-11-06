@@ -10,6 +10,7 @@ from urllib.parse import parse_qs, urljoin, urlparse
 import requests
 from bs4 import BeautifulSoup, Tag
 
+from src.services.constants import UrlType
 from src.llm.dto import TargetParticipantsEnum, ActivityKindEnum, CategoryEnum
 
 CATEGORY_MAPPINGS = {
@@ -227,14 +228,10 @@ def parse_contest_korea_html(
         "full_text": full_text,
         "main_image_link": main_image_link,
         "detail_image_links": detail_image_links,
-        "urls": (
-            [{"type": "SOURCE_ORIGINAL", "url": base_url}]
-            + (
-                [{"type": "OFFICIAL", "url": official_url}]
-                if official_url is not None
-                else []
-            )
-        ),
+        "urls": [
+            {"type": UrlType.SOURCE_ORIGINAL, "url": base_url},
+            {"type": UrlType.OFFICIAL, "url": official_url},
+        ],
         # "application_link": _link(field("접수하기")),
     }
 
