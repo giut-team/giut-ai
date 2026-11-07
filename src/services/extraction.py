@@ -1,4 +1,5 @@
 import re
+import base64
 import asyncio
 import logging
 from functools import lru_cache
@@ -212,18 +213,28 @@ def _load_page_text(blocks: list[dict]) -> str:
 
 
 def _download_image(url: str, timeout: float = 30.0) -> Image:
-    """HTTP(S) 이미지 주소에서 바이트 데이터 다운로드"""
+    """HTTP(S) 이미지 주소 또는 Base64 데이터 URL을 PIL 이미지로 로드"""
     parsed_url = urlparse(url)
-    if parsed_url.scheme.lower() not in {"http", "https"} or not parsed_url.netloc:
-        raise ValueError("이미지 주소가 HTTP(S) URL이 아님")
+    if parsed_url.scheme.lower() == "data":
+        header, separator, encoded = url.partition(",")
+        if (
+            not separator
+            or not header.lower().startswith("data:image/")
+            or not header.lower().endswith(";base64")
+        ):
+            raise ValueError("이미지 주소가 Base64 이미지 데이터 URL이 아님")
+        image_bytes = base64.b64decode(encoded, validate=True)
+    else:
+        if parsed_url.scheme.lower() not in {"http", "https"} or not parsed_url.netloc:
+            raise ValueError("이미지 주소가 HTTP(S) URL 또는 Base64 이미지 데이터 URL이 아님")
 
-    with requests.get(
-        url, headers={"User-Agent": "Mozilla/5.0"}, timeout=timeout
-    ) as response:
-        response.raise_for_status()
-        bytes = response.content
+        with requests.get(
+            url, headers={"User-Agent": "Mozilla/5.0"}, timeout=timeout
+        ) as response:
+            response.raise_for_status()
+            image_bytes = response.content
 
-    with Image.open(BytesIO(bytes)) as image:
+    with Image.open(BytesIO(image_bytes)) as image:
         image.load()
         return image
 

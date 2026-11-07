@@ -9,7 +9,7 @@ class CompetitionExtractRequest(BaseModel):
 
 class UrlItem(BaseModel):
     type: str
-    url: str
+    url: str | None
     # primary: bool
 
 
@@ -29,4 +29,4 @@ class CompetitionExtractResponse(BaseModel):
     is_team: Optional[bool] = None
     summary: Optional[str] = None
     images: Optional[list[str]] = None
-    urls: Optional[list[UrlItem] | str] = None
+    urls: Optional[list[UrlItem]] = None
