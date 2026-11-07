@@ -232,6 +232,7 @@ def parse_contest_korea_html(
             {"type": UrlType.SOURCE_ORIGINAL, "url": base_url},
             {"type": UrlType.OFFICIAL, "url": official_url},
         ],
+        "source_url": base_url,
         # "application_link": _link(field("접수하기")),
     }
 

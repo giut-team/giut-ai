@@ -89,8 +89,9 @@ async def extract_uos_page(page: dict) -> dict:
     keys = [*FIELDS_DESCRIPTION][:]
     keys.remove("title")
 
-    extracted_fields, usage = await extract_fields_from_text(page_text, keys)
-    extracted_fields = extracted_fields.to_dict()
+    extracted_fields = await extract_fields_from_text(
+        page_text, page["source_url"], keys
+    )
     extracted_fields["title"] = page["title"]
     extracted_fields["urls"] = [
         {"type": UrlType.SOURCE_ORIGINAL, "url": page["source_url"]},
@@ -107,10 +108,10 @@ async def extract_uos_page(page: dict) -> dict:
 
     missing_keys = [key for key, value in extracted_fields.items() if value is None]
     if missing_keys:
-        image_extracted_fields, usage = await extract_fields_from_images(
-            page["images"], missing_keys
+        image_extracted_fields = await extract_fields_from_images(
+            page["images"], page["source_url"], missing_keys
         )
-        for key, value in image_extracted_fields.to_dict().items():
+        for key, value in image_extracted_fields.items():
             if value is not None:
                 extracted_fields[key] = value
     extracted_fields["images"] = page["images"]
@@ -207,10 +208,9 @@ async def extract_contest_korea_page(page: dict):
     missing_keys = [
         key for key in FIELDS_DESCRIPTION.keys() if page.get(key, None) is None
     ]
-    extracted_missing_fields, usage = await extract_fields_from_text(
-        page["full_text"], missing_keys
+    extracted_missing_fields = await extract_fields_from_text(
+        page["full_text"], page["source_url"], missing_keys
     )
-    extracted_missing_fields = extracted_missing_fields.to_dict()
     for key, value in extracted_missing_fields.items():
         extracted_fields[key] = value
 
@@ -219,10 +219,12 @@ async def extract_contest_korea_page(page: dict):
 
     missing_keys = [key for key, value in extracted_fields.items() if value is None]
     if missing_keys:
-        image_extracted_fields, usage = await extract_fields_from_images(
-            [page["main_image_link"], *page["detail_image_links"]], missing_keys
+        image_extracted_fields = await extract_fields_from_images(
+            [page["main_image_link"], *page["detail_image_links"]],
+            page["source_url"],
+            missing_keys,
         )
-        for key, value in image_extracted_fields.to_dict().items():
+        for key, value in image_extracted_fields.items():
             if value is not None:
                 extracted_fields[key] = value
 
@@ -245,7 +247,7 @@ async def collect_contest_korea() -> list[dict]:
         except Exception:
             logger.exception("콘테스트코리아 상세 페이지 파싱 실패: %s", url)
             continue
-        page["url"] = url
+        page["source_url"] = url
         results.append(page)
 
     semaphore = asyncio.Semaphore(PAGE_EXTRACTION_CONCURRENCY)

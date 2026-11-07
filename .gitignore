@@ -6,6 +6,7 @@
 *.pyc
 
 .env
+logs/
 
 data/backup/
 data/images/test/**

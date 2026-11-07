@@ -174,16 +174,8 @@ def filter_official_url(blocks: list[dict], source_url: str) -> str | None:
             if has_official_keyword
             else (
                 2
-                if (not has_official_keyword and has_official_inline_keyword)
-                else (
-                    3
-                    if (
-                        not has_official_keyword
-                        and not has_official_inline_keyword
-                        and has_official_context_keyword
-                    )
-                    else 4
-                )
+                if has_official_inline_keyword
+                else (3 if has_official_context_keyword else 4)
             )
         )
 
@@ -226,7 +218,9 @@ def _download_image(url: str, timeout: float = 30.0) -> Image:
         image_bytes = base64.b64decode(encoded, validate=True)
     else:
         if parsed_url.scheme.lower() not in {"http", "https"} or not parsed_url.netloc:
-            raise ValueError("이미지 주소가 HTTP(S) URL 또는 Base64 이미지 데이터 URL이 아님")
+            raise ValueError(
+                "이미지 주소가 HTTP(S) URL 또는 Base64 이미지 데이터 URL이 아님"
+            )
 
         with requests.get(
             url, headers={"User-Agent": "Mozilla/5.0"}, timeout=timeout
@@ -313,9 +307,7 @@ async def run_pipeline(url: str, use_classifier: bool = True):
     relevant_blocks = run_text_classifier(blocks) if use_classifier else blocks
 
     page_text = _load_page_text(relevant_blocks)
-
-    extracted_fields, usage = await extract_fields_from_text(page_text)
-    extracted_fields = extracted_fields.to_dict()
+    extracted_fields = await extract_fields_from_text(page_text, url)
 
     extracted_fields["urls"] = [
         {"type": UrlType.SOURCE_ORIGINAL, "url": url},
@@ -326,7 +318,7 @@ async def run_pipeline(url: str, use_classifier: bool = True):
     ]  # 수집 경로 및 공식 홈페이지 URL 추가
 
     if not is_eligible_activity(extracted_fields):
-        return extracted_fields, usage
+        return extracted_fields
 
     missing_keys = [key for key, value in extracted_fields.items() if value is None]
 
@@ -354,17 +346,15 @@ async def run_pipeline(url: str, use_classifier: bool = True):
         image_urls = [i["src"] for i in relevant_images]
 
     if image_urls != []:
-        image_extracted_fields, usage = await extract_fields_from_images(
-            image_urls, missing_keys
+        image_extracted_fields = await extract_fields_from_images(
+            image_urls, url, missing_keys
         )
-        image_extracted_fields = image_extracted_fields.to_dict()
-
         # 이미지에서 추출에 성공한 데이터만 기존 extracted_fields에 추가
         for key, value in image_extracted_fields.items():
             if value is not None:
                 extracted_fields[key] = value
 
-    return extracted_fields, usage
+    return extracted_fields
 
 
 if __name__ == "__main__":
