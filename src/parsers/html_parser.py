@@ -1,16 +1,19 @@
 from __future__ import annotations
 
+import asyncio
 import ipaddress
 import re
 import socket
 from copy import deepcopy
 from dataclasses import dataclass, field
+from time import monotonic
 from urllib.parse import urljoin, urlparse
 
 import requests
 import urllib3
 from bs4 import BeautifulSoup, Comment, NavigableString
 from playwright.async_api import Error as PlaywrightError
+from playwright.async_api import TimeoutError as PlaywrightTimeoutError
 
 # 최상위 컨테이너 (class/id 키워드 매칭에서 제외)
 ROOT_TAGS = ("html", "body")
@@ -156,7 +159,7 @@ class HtmlParser:
 
         content = self._fetch_static(url)
         if self._looks_like_csr_shell(content):
-            return self._fetch_rendered(url)
+            return await self._fetch_rendered(url)
         return content
 
     def _fetch_static(self, url: str) -> bytes:
@@ -188,7 +191,7 @@ class HtmlParser:
         raise UnsafeURLError(f"too many redirects while fetching {url!r}")
 
     async def _fetch_rendered(self, url: str) -> bytes:
-        """Playwright로 페이지를 열어 JS 실행이 끝난 뒤(domcontentloaded) DOM 반환"""
+        """검증 페이지 이동 및 비동기 본문 로딩을 기다린 뒤 렌더링된 DOM 반환."""
         self._validate_url(url)
         browser = await self._ensure_browser()  # 브라우저가 열려 있으면 재사용
 
@@ -196,15 +199,35 @@ class HtmlParser:
             user_agent=DEFAULT_USER_AGENT,
             ignore_https_errors=True,
         )
+        document_ready = asyncio.Event()
+
+        def on_response(response):
+            if (
+                response.request.is_navigation_request()
+                and response.frame == page.main_frame
+            ):
+                if response.headers.get("x-amzn-waf-action") in {
+                    "challenge",
+                    "captcha",
+                }:
+                    document_ready.clear()
+                else:
+                    document_ready.set()
+
+        page.on("response", on_response)
         try:
             # 페이지 스스로도 자기 JS로 임의 주소에 요청을 보낼 수 있으므로 모든 하위 요청 검증
             await page.route("**/*", self._guard_route)
+            deadline = monotonic() + self.timeout
             await page.goto(
                 url, timeout=self.timeout * 1000, wait_until="domcontentloaded"
             )  # "networkidle" 보다 안정적 (사이트 요청이 계속 들어올 경우 대비)
             # DOM 준비 직후 페이지가 다시 이동하면 실행 컨텍스트가 사라질 수 있다.
             for attempt in range(3):
                 try:
+                    await self._wait_for_rendered_content(
+                        page, document_ready, deadline
+                    )
                     # 각 이미지의 원본 사이즈 및 브라우저 측정 사이즈 저장
                     await page.locator("img").evaluate_all("""images => {
                         for (const img of images) {
@@ -224,12 +247,69 @@ class HtmlParser:
                     ):
                         raise
                     await page.wait_for_load_state(
-                        "domcontentloaded", timeout=self.timeout * 1000
+                        "domcontentloaded",
+                        timeout=max(1, (deadline - monotonic()) * 1000),
                     )
         finally:
             await page.close()
 
         return html.encode("utf-8")
+
+    async def _wait_for_rendered_content(self, page, document_ready, deadline) -> None:
+        """본문/이미지가 나타나고 500ms 동안 내용이 안정될 때까지 제한 시간 내 대기."""
+        remaining = deadline - monotonic()
+        if remaining <= 0:
+            raise PlaywrightTimeoutError("Timed out waiting for page content")
+        try:
+            # WAF 중간 페이지가 표시되어도 실제 문서 응답 전에는 추출하지 않는다.
+            await asyncio.wait_for(document_ready.wait(), timeout=remaining)
+        except TimeoutError as exc:
+            raise PlaywrightTimeoutError(
+                "Timed out waiting for document response"
+            ) from exc
+
+        remaining = deadline - monotonic()
+        if remaining <= 0:
+            raise PlaywrightTimeoutError("Timed out waiting for page content")
+        handle = await page.wait_for_function(
+            r"""({noiseTags, noiseKeywords}) => {
+                if (!document.body || document.readyState === 'loading') return false;
+                const body = document.body.cloneNode(true);
+                const keywords = new Set(noiseKeywords);
+                for (const node of body.querySelectorAll('*')) {
+                    const tokens = `${node.getAttribute('class') || ''} ${node.id || ''}`
+                        .toLowerCase().split(/[^a-z0-9]+/);
+                    if (noiseTags.includes(node.tagName.toLowerCase()) ||
+                        node.hidden || node.getAttribute('aria-hidden') === 'true' ||
+                        tokens.some(token => keywords.has(token))) {
+                        node.remove();
+                    }
+                }
+                // 메뉴가 먼저 표시되어도 main이 있으면 본문 표시까지 대기
+                const root = body.querySelector('main, [role="main"], article') || body;
+                const text = (root.textContent || '').replace(/\s+/g, ' ').trim();
+                const images = Array.from(root.querySelectorAll('img'))
+                    .map(img => img.getAttribute('src') || img.getAttribute('data-src') ||
+                        img.getAttribute('data-original') || img.getAttribute('srcset'))
+                    .filter(Boolean);
+                if (!text && !images.length) {
+                    delete window.__giutParserContentState;
+                    return false;
+                }
+                const signature = JSON.stringify([location.href, text, images]);
+                const now = performance.now();
+                const previous = window.__giutParserContentState;
+                if (!previous || previous.signature !== signature) {
+                    window.__giutParserContentState = {signature, since: now};
+                    return false;
+                }
+                return now - previous.since >= 500;
+            }""",
+            arg={"noiseTags": NOISE_TAGS, "noiseKeywords": NOISE_KEYWORDS},
+            polling=100,
+            timeout=remaining * 1000,
+        )
+        await handle.dispose()
 
     def parse(self, content: str | bytes, base_url: str = "") -> ParsedPage:
         """HTML -> 노이즈 제거 -> 남은 본문만 블록 단위로 분리 -> feature dict 생성.
