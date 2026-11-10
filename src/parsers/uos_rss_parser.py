@@ -1,5 +1,6 @@
 """서울시립대학교 RSS에서 제목, 원문 링크, 본문 텍스트, 게시일, 이미지 src 추출"""
 
+import html
 import json
 import re
 
@@ -72,7 +73,9 @@ def parse_uos_rss(url: str, timeout: float = 30) -> list[dict[str, str | list[st
 
     return [
         {
-            "title": entry.get("title", "").strip(),
+            "title": html.unescape(
+                entry.get("title", "")
+            ).strip(),  # 제목이 HTML 이스케이프 된 상태이므로 디코딩 필요
             "source_url": entry.get("link", "").strip(),
             "body": _html_to_text(entry.get("summary", "")),
             "published_date": entry.get("published", "").strip(),
