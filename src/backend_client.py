@@ -1,37 +1,31 @@
-import json
-from datetime import date, datetime
-from enum import Enum
+import logging
 from typing import Any, Mapping
-import requests
 
+import requests
+from pydantic import TypeAdapter, ValidationError
+
+from src.api.dto import CompetitionExtractResponse
 from src.config import settings
 
 COMPETITIONS_API_URL = settings.COMPETITIONS_API_URL
+logger = logging.getLogger(__name__)
 
-
-def _json_default(value: Any) -> Any:
-    if isinstance(value, Enum):
-        return value.value
-    if isinstance(value, (date, datetime)):
-        return value.isoformat()
-    raise TypeError(f"Object of type {type(value).__name__} is not JSON serializable")
+_competition_list_adapter = TypeAdapter(list[CompetitionExtractResponse])
 
 
 def post_competition(
-    extracted_fields: Mapping[str, Any] | list[Mapping[str, Any]],
+    extracted_fields: list[Mapping[str, Any]],
     x_ai_api_key: str,
     *,
-    timeout: float = 60.0,
+    timeout: float = 10.0,
 ) -> requests.Response:
-    """추출된 필드를 JSON 본문으로 전송"""
+    """추출된 필드를 list[CompetitionExtractResponse] 형식으로 검증 후 전송"""
     if not x_ai_api_key or not x_ai_api_key.strip():
         raise ValueError("X-AI-API-Key must be provided")
 
-    if isinstance(extracted_fields, list):
-        fields = [dict(item) for item in extracted_fields]
-    else:
-        fields = dict(extracted_fields)
-    payload = json.loads(json.dumps(fields, default=_json_default))
+    competitions = _competition_list_adapter.validate_python(extracted_fields)
+    payload = _competition_list_adapter.dump_python(competitions, mode="json")
+
     response = requests.post(
         COMPETITIONS_API_URL,
         json=payload,
@@ -40,5 +34,9 @@ def post_competition(
         },
         timeout=timeout,
     )
+    if not response.ok:
+        logger.error(
+            "백엔드 전송 실패 (%s): %s", response.status_code, response.text[:2000]
+        )
     response.raise_for_status()
     return response
