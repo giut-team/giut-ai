@@ -15,18 +15,11 @@ MAX_PAGE_ID = 34  # 공모전 상세페이지만. 네거티브 모두 제거 (+ 
 
 
 @pytest.mark.skip(reason="한 페이지당 결과 블록 생성용 헬퍼 함수")
-def make_result_block(id, fields_result, usage, comparison, elapsed_time):
-    input_tokens = usage.prompt_tokens
-    cached_input_tokens = usage.prompt_tokens_details.cached_tokens
-    output_tokens = usage.completion_tokens
+def make_result_block(id, fields_result, comparison, elapsed_time):
 
     result_block = {
         "page_id": id,
         "elapsed_time": str(elapsed_time),
-        "input_tokens": input_tokens,
-        "cached_input_tokens": cached_input_tokens,
-        "cache_rate": cached_input_tokens / input_tokens,
-        "output_tokens": output_tokens,
         "response": {k: str(v) for k, v in fields_result.items()},
         "comparison": comparison,
     }
@@ -79,21 +72,21 @@ async def test_extract_fields():
             page_text = _load_page_text(blocks)
 
             started_at = datetime.now()
-            fields_result, usage = await extract_fields_from_text(page_text)
+            fields_result = await extract_fields_from_text(page_text, "")
             ended_at = datetime.now()
             elapsed_time = str(ended_at - started_at)
 
-            print("\n" + fields_result.format())
+            print()
+            print(*(f"{k}: {v}\n" for k, v in fields_result.items()))
             print("elapsed_time:", elapsed_time)
 
-            comparison = fields_result.compare(
+            comparison = ExtractedFields.from_dict(fields_result).compare(
                 ExtractedFields.from_dict(page_labels[id])
             )
 
             result = make_result_block(
                 id=id,
-                fields_result=fields_result.to_dict(),
-                usage=usage,
+                fields_result=fields_result,
                 comparison=comparison,
                 elapsed_time=elapsed_time,
             )
@@ -136,19 +129,21 @@ async def test_extract_fields_from_images():
         images = image_paths[PAGE_ID]
 
         started_at = datetime.now()
-        fields_result, usage = await extract_fields_from_images(images)
+        fields_result = await extract_fields_from_images(images, "")
         ended_at = datetime.now()
         elapsed_time = str(ended_at - started_at)
 
-        print(fields_result.format())
+        print()
+        print(*(f"{k}: {v}\n" for k, v in fields_result.items()))
         print("elapsed_time:", elapsed_time)
 
-        comparison = fields_result.compare(ExtractedFields.from_dict(page_labels[id]))
+        comparison = ExtractedFields.from_dict(fields_result).compare(
+            ExtractedFields.from_dict(page_labels[PAGE_ID])
+        )
 
         result = make_result_block(
-            id=id,
-            fields_result=fields_result.to_dict(),
-            usage=usage,
+            id=PAGE_ID,
+            fields_result=fields_result,
             comparison=comparison,
             elapsed_time=elapsed_time,
         )
@@ -169,7 +164,7 @@ async def test_pipeline():
     TEST_PAGE_ID = 0
 
     started_at = datetime.now()
-    fields_result, usage = await run_pipeline(URLS[TEST_PAGE_ID])
+    fields_result = await run_pipeline(URLS[TEST_PAGE_ID])
     ended_at = datetime.now()
     elapsed_time = ended_at - started_at
 
@@ -190,7 +185,6 @@ async def test_pipeline():
     result = make_result_block(
         id=TEST_PAGE_ID,
         fields_result=fields_result,
-        usage=usage,
         comparison=comparison,
         elapsed_time=elapsed_time,
     )

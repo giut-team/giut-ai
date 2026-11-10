@@ -117,13 +117,21 @@ async def extract_fields_from_text(
 
     except Exception as exc:
         logger.exception(exc)
-        write_gpt_usage_log(None, status="error", error_type=type(exc).__name__)
+        write_gpt_usage_log(
+            None,
+            source_url=source_url,
+            request_type="text",
+            started_at=started_at,
+            ended_at=datetime.now(timezone.utc),
+            status="error",
+            error_type=type(exc).__name__,
+        )
         return {}
 
 
 async def extract_fields_from_images(
-    image_urls: list[str], source_url: str, keys: list[str]
-) -> SelectedExtractedFields:
+    image_urls: list[str], source_url: str, keys: list[str] = FIELDS_DESCRIPTION.keys()
+) -> dict:
     # 추출할 키 및 관련 설명만 기본 프롬프트에 추가
     descriptions = [FIELDS_DESCRIPTION[key] for key in keys]
     prompt = OPENAI_VLM_PROMPT + "\n".join(descriptions)
@@ -160,5 +168,13 @@ async def extract_fields_from_images(
 
     except Exception as exc:
         logger.exception(exc)
-        write_gpt_usage_log(None, status="error", error_type=type(exc).__name__)
-        return SelectedExtractedFields()
+        write_gpt_usage_log(
+            None,
+            source_url=source_url,
+            request_type="image",
+            started_at=started_at,
+            ended_at=datetime.now(timezone.utc),
+            status="error",
+            error_type=type(exc).__name__,
+        )
+        return {}
