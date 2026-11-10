@@ -21,7 +21,7 @@ SNS_DOMAINS = {
     "kakao.com",
     "tistory.com",
     "google.com",
-    "naver.com",
+    r"^naver.com",
     "naver.me",
     "openstreetmap.org",  # 이벤터스
     "stibee.com",  # 이벤터스
