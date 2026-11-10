@@ -11,6 +11,7 @@ class Settings:
     OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-5-nano")
     GPT_USAGE_LOG_DIR = os.getenv("GPT_USAGE_LOG_DIR", str(BASE_DIR / "logs"))
     X_AI_API_KEY = os.getenv("X_AI_API_KEY")
+    COMPETITIONS_API_URL = os.getenv("COMPETITIONS_API_URL")
 
 
 settings = Settings()

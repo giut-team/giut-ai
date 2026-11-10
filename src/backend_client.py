@@ -2,10 +2,11 @@ import json
 from datetime import date, datetime
 from enum import Enum
 from typing import Any, Mapping
-
 import requests
 
-COMPETITIONS_URL = "https://api.dev.giut.store/api/integrations/competitions/batch"
+from src.config import settings
+
+COMPETITIONS_API_URL = settings.COMPETITIONS_API_URL
 
 
 def _json_default(value: Any) -> Any:
@@ -20,7 +21,7 @@ def post_competition(
     extracted_fields: Mapping[str, Any] | list[Mapping[str, Any]],
     x_ai_api_key: str,
     *,
-    timeout: float = 10.0,
+    timeout: float = 60.0,
 ) -> requests.Response:
     """추출된 필드를 JSON 본문으로 전송"""
     if not x_ai_api_key or not x_ai_api_key.strip():
@@ -32,7 +33,7 @@ def post_competition(
         fields = dict(extracted_fields)
     payload = json.loads(json.dumps(fields, default=_json_default))
     response = requests.post(
-        COMPETITIONS_URL,
+        COMPETITIONS_API_URL,
         json=payload,
         headers={
             "X-AI-API-Key": f"{x_ai_api_key.strip()}",
