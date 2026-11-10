@@ -40,6 +40,8 @@ TEXT_SCALER_PATH = MODEL_DIR / "text_classifier" / "num_scaler_v1.joblib"
 TEXT_CLASSIFIER_PATH = MODEL_DIR / "text_classifier" / "text_classifier_head_v1.pt"
 IMAGE_CLASSIFIER_PATH = MODEL_DIR / "image_classifier" / "image_classifier.pt"
 
+TEXT_CLASSIFIER_CONCURRENCY = 1
+
 
 @lru_cache(maxsize=1)
 def get_models():
@@ -304,7 +306,12 @@ async def run_pipeline(url: str, use_classifier: bool = True):
     if blocks is None or len(blocks) == 0:
         raise ValueError("페이지 텍스트 추출에 실패했습니다.")
 
-    relevant_blocks = run_text_classifier(blocks) if use_classifier else blocks
+    # TODO: 배포 시 5(혹은 배포 환경 동시실행 스레드 수)로 맞출것
+    if use_classifier:
+        async with asyncio.Semaphore(TEXT_CLASSIFIER_CONCURRENCY):
+            relevant_blocks = await asyncio.to_thread(run_text_classifier, blocks)
+    else:
+        relevant_blocks = blocks
 
     page_text = _load_page_text(relevant_blocks)
     extracted_fields = await extract_fields_from_text(page_text, url)
