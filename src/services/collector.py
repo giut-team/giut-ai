@@ -21,7 +21,6 @@ from src.parsers.contest_korea_parser import parse_contest_korea
 
 UOS_RSS_GENERAL = "https://www.uos.ac.kr/rss/gBoard.do"
 UOS_RSS_HAKSA = "https://www.uos.ac.kr/rss/hBoard.do"
-PAGE_EXTRACTION_CONCURRENCY = 5
 
 CONTEST_KOREA_CONTEST_LIST = (
     "https://www.contestkorea.com/sub/list.php?int_gbn=1"  # 공모전/대회
@@ -29,6 +28,7 @@ CONTEST_KOREA_CONTEST_LIST = (
 CONTEST_KOREA_ACTIVITY_LIST = (
     "https://www.contestkorea.com/sub/list.php?int_gbn=2"  # 대외활동
 )
+CONTEST_KOREA_SCAN_LIMIT = 30  # 각 목록 앞 30개에서 전일 게시물만 선택
 CONTEST_KOREA_FILTERS = {  # 공모전 검색 조건
     "Txt_sortkey": "a.int_sort",
     "Txt_sortword": "desc",
@@ -39,6 +39,8 @@ CONTEST_KOREA_FILTERS = {  # 공모전 검색 조건
     "Txt_area[1]": "97",  # 온라인
     "Txt_area[2]": "31",  # 서울
 }
+
+PAGE_EXTRACTION_CONCURRENCY = 5
 
 SEOUL_TIMEZONE = ZoneInfo("Asia/Seoul")
 logger = logging.getLogger(__name__)
@@ -89,8 +91,9 @@ async def extract_uos_page(page: dict) -> dict:
     keys = [*FIELDS_DESCRIPTION][:]
     keys.remove("title")
 
-    extracted_fields, usage = await extract_fields_from_text(page_text, keys)
-    extracted_fields = extracted_fields.to_dict()
+    extracted_fields = await extract_fields_from_text(
+        page_text, page["source_url"], keys
+    )
     extracted_fields["title"] = page["title"]
     extracted_fields["urls"] = [
         {"type": UrlType.SOURCE_ORIGINAL, "url": page["source_url"]},
@@ -107,10 +110,10 @@ async def extract_uos_page(page: dict) -> dict:
 
     missing_keys = [key for key, value in extracted_fields.items() if value is None]
     if missing_keys:
-        image_extracted_fields, usage = await extract_fields_from_images(
-            page["images"], missing_keys
+        image_extracted_fields = await extract_fields_from_images(
+            page["images"], page["source_url"], missing_keys
         )
-        for key, value in image_extracted_fields.to_dict().items():
+        for key, value in image_extracted_fields.items():
             if value is not None:
                 extracted_fields[key] = value
     extracted_fields["images"] = page["images"]
@@ -146,8 +149,9 @@ async def _contest_korea_detail_urls(list_url: str, yesterday: date) -> list[str
     first_page = True
     detail_urls = []
     seen_urls = set()
+    scanned_entries = 0
 
-    while page_url:
+    while page_url and scanned_entries < CONTEST_KOREA_SCAN_LIMIT:
         response = await asyncio.to_thread(
             requests.get,
             page_url,
@@ -164,8 +168,10 @@ async def _contest_korea_detail_urls(list_url: str, yesterday: date) -> list[str
         if not entries:
             break
 
-        reached_older_entry = False
-        for entry in entries:
+        # 사이트의 목록 순서는 게시일 순서가 아니므로 오래된 글이 나와도 CONTEST_KOREA_SCAN_LIMIT 범위 내에서 계속 확인
+        candidates = entries[: CONTEST_KOREA_SCAN_LIMIT - scanned_entries]
+        scanned_entries += len(candidates)
+        for entry in candidates:
             url = urljoin(response.url, entry["href"])
             str_no = parse_qs(urlparse(url).query).get("str_no", [""])[0]
             try:
@@ -176,14 +182,11 @@ async def _contest_korea_detail_urls(list_url: str, yesterday: date) -> list[str
                 )
                 continue
 
-            if posted_date < yesterday:
-                reached_older_entry = True
-                break
             if posted_date == yesterday and url not in seen_urls:
                 seen_urls.add(url)
                 detail_urls.append(url)
 
-        if reached_older_entry:
+        if scanned_entries >= CONTEST_KOREA_SCAN_LIMIT:
             break
 
         current_page = int(parse_qs(urlparse(response.url).query).get("page", ["1"])[0])
@@ -207,10 +210,9 @@ async def extract_contest_korea_page(page: dict):
     missing_keys = [
         key for key in FIELDS_DESCRIPTION.keys() if page.get(key, None) is None
     ]
-    extracted_missing_fields, usage = await extract_fields_from_text(
-        page["full_text"], missing_keys
+    extracted_missing_fields = await extract_fields_from_text(
+        page["full_text"], page["source_url"], missing_keys
     )
-    extracted_missing_fields = extracted_missing_fields.to_dict()
     for key, value in extracted_missing_fields.items():
         extracted_fields[key] = value
 
@@ -219,10 +221,12 @@ async def extract_contest_korea_page(page: dict):
 
     missing_keys = [key for key, value in extracted_fields.items() if value is None]
     if missing_keys:
-        image_extracted_fields, usage = await extract_fields_from_images(
-            [page["main_image_link"], *page["detail_image_links"]], missing_keys
+        image_extracted_fields = await extract_fields_from_images(
+            [page["main_image_link"], *page["detail_image_links"]],
+            page["source_url"],
+            missing_keys,
         )
-        for key, value in image_extracted_fields.to_dict().items():
+        for key, value in image_extracted_fields.items():
             if value is not None:
                 extracted_fields[key] = value
 
@@ -245,7 +249,7 @@ async def collect_contest_korea() -> list[dict]:
         except Exception:
             logger.exception("콘테스트코리아 상세 페이지 파싱 실패: %s", url)
             continue
-        page["url"] = url
+        page["source_url"] = url
         results.append(page)
 
     semaphore = asyncio.Semaphore(PAGE_EXTRACTION_CONCURRENCY)

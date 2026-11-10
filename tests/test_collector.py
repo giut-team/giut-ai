@@ -1,8 +1,8 @@
 import asyncio
 import threading
-from datetime import datetime
+from datetime import date, datetime
 from types import SimpleNamespace
-from urllib.parse import urlencode
+from urllib.parse import parse_qs, urlencode, urlparse
 
 import pytest
 
@@ -151,6 +151,7 @@ def test_collect_contest_korea_filters_yesterday_across_pages(monkeypatch):
                 html = """
                     <div class='list_style_2'>
                       <div class='title'><a href='view.php?int_gbn=1&amp;str_no=202610280001'>today</a></div>
+                      <div class='title'><a href='view.php?int_gbn=1&amp;str_no=202610260001'>older</a></div>
                       <div class='title'><a href='view.php?int_gbn=1&amp;str_no=202610270002'>yesterday</a></div>
                     </div>
                     <div class='pagination'><a href='?int_gbn=1&page=2'>2</a></div>
@@ -158,15 +159,15 @@ def test_collect_contest_korea_filters_yesterday_across_pages(monkeypatch):
             else:
                 html = """
                     <div class='list_style_2'>
-                      <div class='title'><a href='view.php?int_gbn=2&amp;str_no=202610270005'>yesterday</a></div>
                       <div class='title'><a href='view.php?int_gbn=2&amp;str_no=202610260006'>older</a></div>
+                      <div class='title'><a href='view.php?int_gbn=2&amp;str_no=202610270005'>yesterday</a></div>
                     </div>
                 """
         else:
             html = """
                 <div class='list_style_2'>
-                  <div class='title'><a href='view.php?int_gbn=1&amp;str_no=202610270003'>yesterday</a></div>
                   <div class='title'><a href='view.php?int_gbn=1&amp;str_no=202610260004'>older</a></div>
+                  <div class='title'><a href='view.php?int_gbn=1&amp;str_no=202610270003'>yesterday</a></div>
                 </div>
             """
         return FakeResponse(url, html)
@@ -175,7 +176,7 @@ def test_collect_contest_korea_filters_yesterday_across_pages(monkeypatch):
         parsed.append(url)
         return {"title": url.rsplit("=", 1)[-1]}
 
-    async def fake_extract_page(page, semaphore):
+    async def fake_extract_page(page):
         return page
 
     monkeypatch.setattr(collector, "datetime", FakeDateTime)
@@ -193,7 +194,52 @@ def test_collect_contest_korea_filters_yesterday_across_pages(monkeypatch):
         "202610270003",
         "202610270005",
     ]
-    assert [result["url"] for result in results] == parsed
+    assert [result["source_url"] for result in results] == parsed
+
+
+@pytest.mark.parametrize("int_gbn", ["1", "2"])
+def test_contest_korea_scans_only_first_30_entries(monkeypatch, int_gbn):
+    requested_pages = []
+    list_url = f"https://www.contestkorea.com/sub/list.php?int_gbn={int_gbn}"
+    filters = {"int_gbn": int_gbn, **collector.CONTEST_KOREA_FILTERS}
+
+    def fake_get(url, *, params=None, headers, timeout):
+        if params:
+            url = f"{url}?{urlencode(params)}"
+        query = parse_qs(urlparse(url).query)
+        for key, value in filters.items():
+            assert query[key] == [value]
+        page = int(query.get("page", ["1"])[0])
+        requested_pages.append(page)
+        assert page <= 3
+        entries = []
+        for position in range((page - 1) * 12 + 1, page * 12 + 1):
+            # The last allowed entry matches; the next entry must be ignored.
+            prefix = "20261109" if position >= 30 else "20261108"
+            number = f"{prefix}{position:04d}"
+            entries.append(
+                f"<div class='title'><a href='view.php?int_gbn={int_gbn}"
+                f"&amp;str_no={number}'>{position}</a></div>"
+            )
+        next_url = "?" + urlencode({**filters, "page": page + 1})
+        html = (
+            "<div class='list_style_2'>" + "".join(entries) + "</div>"
+            f"<div class='pagination'><a href='{next_url}'>next</a></div>"
+        )
+        return SimpleNamespace(
+            url=url, content=html.encode(), raise_for_status=lambda: None
+        )
+
+    monkeypatch.setattr(collector.requests, "get", fake_get)
+    results = asyncio.run(
+        collector._contest_korea_detail_urls(list_url, date(2026, 11, 9))
+    )
+
+    assert requested_pages == [1, 2, 3]
+    assert results == [
+        f"https://www.contestkorea.com/sub/view.php?int_gbn={int_gbn}"
+        "&str_no=202611090030"
+    ]
 
 
 def test_daily_collector_waits_until_seoul_midnight(monkeypatch):

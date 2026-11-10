@@ -1,7 +1,7 @@
 FIELDS_DESCRIPTION = {
     "title": "- title (string): 공모전명(활동명) (실제 활동의 정식 명칭을 횟수, 수식어 등 생략 없이 명사형으로 작성)",
     "host_organization": "- host_organization (string): 주최기관 (후원기관은 미포함)",
-    "target_participants": "- target_participants (string): 참가 가능 대상('대학생만 가능', '대학생 및 일반인'('전 국민 누구나'도 포함), '대학생 참여 불가능' 중 해당되는 것 택1) '대학생'에는 대학원생도 포함하여 판단할 것. 참가 대상이 명시되지 않은 경우 null",
+    "target_participants": "- target_participants (string): 참가 가능 대상('대학생만 가능', '대학생 및 일반인'('전 국민 누구나'도 포함), '대학생 참여 불가능' 중 해당되는 것 택1) '대학생'에는 대학원생도 포함되며 졸업생은 포함되지 않음. 참가 대상이 명시되지 않은 경우 null",
     "is_for_enrolled_only": "- is_for_enrolled_only (boolean): 대학(원)생 대상인 경우 '재학생만 대상'이라는 명확한 근거가 있으면 true, 참가 대상이 명시되지 않은 경우 null, 나머지 경우는 false",
     "application_start_at": "- application_start_at (string, YYYY-MM-DD 형식): 접수 시작일",
     "application_end_at": "- application_end_at (string, YYYY-MM-DD 형식): 접수 마감일",
