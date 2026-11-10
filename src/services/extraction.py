@@ -75,8 +75,8 @@ def is_eligible_activity(extracted_fields: dict) -> bool:
     is_team = extracted_fields.get("is_team", None)
 
     if (
-        target_participants == TargetParticipantsEnum.NONE.value
-        or activity_kind == ActivityKindEnum.INVALID_ACTIVITY.value
+        target_participants == TargetParticipantsEnum.NONE
+        or activity_kind == ActivityKindEnum.INVALID_ACTIVITY
         or is_team == False
     ):
         return False
