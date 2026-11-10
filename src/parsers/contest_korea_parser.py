@@ -14,14 +14,15 @@ from src.services.constants import UrlType
 from src.llm.dto import TargetParticipantsEnum, ActivityKindEnum, CategoryEnum
 
 CATEGORY_MAPPINGS = {
-    "문학•문예": [CategoryEnum.LITERATURE.value],
-    "네이밍•슬로건": [CategoryEnum.IDEA.value],
+    "문학•문예": [CategoryEnum.LITERATURE],
+    "네이밍•슬로건": [CategoryEnum.IDEA],
     "학문•과학•IT": None,
-    "스포츠": [CategoryEnum.CULTURE_ARTS.value],
-    "미술•디자인•웹툰": [CategoryEnum.DESIGN.value, CategoryEnum.CULTURE_ARTS.value],
-    "사진•영상•영화제": [CategoryEnum.PHOTO_CONTENTS.value],
-    "아이디어•건축•창업": [CategoryEnum.IDEA.value],
-    "요리•뷰티•배우•오디션": [CategoryEnum.CULTURE_ARTS.value],
+    "스포츠": [CategoryEnum.CULTURE_ARTS],
+    "음악•콩쿠르•댄스": [CategoryEnum.CULTURE_ARTS],
+    "미술•디자인•웹툰": [CategoryEnum.DESIGN, CategoryEnum.CULTURE_ARTS],
+    "사진•영상•영화제": [CategoryEnum.PHOTO_CONTENTS],
+    "아이디어•건축•창업": [CategoryEnum.IDEA],
+    "요리•뷰티•배우•오디션": [CategoryEnum.CULTURE_ARTS],
 }
 
 
@@ -131,31 +132,31 @@ def _detail(
     return full_text or None, image_links
 
 
-def _target_participants(target_text: str) -> str:
+def _target_participants(target_text: str) -> TargetParticipantsEnum:
     target_list = [t.strip() for t in target_text.split(",")]
     if all(target in {"대학생", "대학원생"} for target in target_list):
-        return TargetParticipantsEnum.UNIV_ONLY.value
+        return TargetParticipantsEnum.UNIV_ONLY
     elif any(target in {"누구나", "대학생", "일반인"} for target in target_list):
-        return TargetParticipantsEnum.ALL.value
+        return TargetParticipantsEnum.ALL
     else:
-        return TargetParticipantsEnum.NONE.value
+        return TargetParticipantsEnum.NONE
 
 
-def _activity_kind(title: str, collect_source: str) -> str:
+def _activity_kind(title: str, collect_source: str) -> ActivityKindEnum:
     if collect_source == "contest":
         if title.find("대회") != -1:
-            return ActivityKindEnum.COMPETITION.value
+            return ActivityKindEnum.COMPETITION
         else:
-            return ActivityKindEnum.CONTEST.value
+            return ActivityKindEnum.CONTEST
 
     elif collect_source == "activity":
         for activity_kind in ActivityKindEnum:
             if title.find(activity_kind.value) != -1:
-                return activity_kind.value
+                return activity_kind
         return None
 
 
-def _category(category: str, collect_source: str) -> list[str] | None:
+def _category(category: str, collect_source: str) -> list[CategoryEnum] | None:
     if collect_source == "contest":
         return CATEGORY_MAPPINGS[category]
 
@@ -165,7 +166,7 @@ def _category(category: str, collect_source: str) -> list[str] | None:
 
 def parse_contest_korea_html(
     html: str | bytes, base_url: str, collect_source: str
-) -> dict[str, str | int | list[str] | None]:
+) -> dict:
     # bytes를 전달받아 BeautifulSoup가 HTML의 charset 처리
     soup = BeautifulSoup(html, "html.parser")
     area = soup.select_one("div.view_top_area.clfx")
@@ -217,7 +218,7 @@ def parse_contest_korea_html(
         "host_organization": _text(field("주최기관", "주최", "주최 . 주관")),
         "target_participants": target_participants,
         "is_for_enrolled_only": (
-            target_participants == TargetParticipantsEnum.UNIV_ONLY.value
+            target_participants == TargetParticipantsEnum.UNIV_ONLY
         ),
         "activity_kind": _activity_kind(title, collect_source),
         "category": _category(category, collect_source),
@@ -237,9 +238,7 @@ def parse_contest_korea_html(
     }
 
 
-def parse_contest_korea(
-    url: str, timeout: float = 30
-) -> dict[str, str | int | list[str] | None]:
+def parse_contest_korea(url: str, timeout: float = 30) -> dict:
     response = requests.get(url, headers={"User-Agent": "Mozilla/5.0"}, timeout=timeout)
     response.raise_for_status()
 

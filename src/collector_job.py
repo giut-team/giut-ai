@@ -1,18 +1,17 @@
 import asyncio
 from datetime import datetime, time, timedelta
 import logging
-import os
-from zoneinfo import ZoneInfo
 
+from src.config import settings
 from src.backend_client import post_competition
 from src.services.collector import collect_contest_korea, collect_uos
 
-SEOUL_TIMEZONE = ZoneInfo("Asia/Seoul")
 logger = logging.getLogger(__name__)
 
 
 async def collect_and_post(x_ai_api_key: str) -> None:
     """시립대 공지 및 콘테스트코리아에서 추출한 결과 리스트 전체 전송"""
+    logger.info("공모전 정보 수집 시작")
     uos_results, contest_korea_results = await asyncio.gather(
         collect_uos(), collect_contest_korea()
     )
@@ -26,19 +25,18 @@ async def run_daily_collector(x_ai_api_key: str) -> None:
         raise ValueError("X-AI-API-Key must be provided")
 
     while True:
-        now = datetime.now(SEOUL_TIMEZONE)
+        now = datetime.now(settings.TIMEZONE)
         next_midnight = datetime.combine(
-            now.date() + timedelta(days=1), time.min, tzinfo=SEOUL_TIMEZONE
+            now.date() + timedelta(days=1), time.min, tzinfo=settings.TIMEZONE
         )
         await asyncio.sleep((next_midnight - now).total_seconds())
 
         try:
             await collect_and_post(x_ai_api_key)
-        except Exception:
-            logger.exception("공모전 수집 또는 전송 실패")
+            logger.info("공모전 수집 및 전송 성공")
+        except Exception as exc:
+            logger.exception("공모전 수집 또는 전송 실패: %r", exc)
 
 
 if __name__ == "__main__":
-    from src.config import settings
-
     asyncio.run(run_daily_collector(settings.X_AI_API_KEY))
