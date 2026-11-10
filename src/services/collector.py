@@ -4,11 +4,11 @@ from datetime import date, datetime, timedelta
 from email.utils import parsedate_to_datetime
 import re
 from urllib.parse import parse_qs, urljoin, urlparse
-from zoneinfo import ZoneInfo
 
 import requests
 from bs4 import BeautifulSoup
 
+from src.config import settings
 from src.services.constants import UrlType
 from src.services.extraction import (
     filter_official_url,
@@ -42,7 +42,6 @@ CONTEST_KOREA_FILTERS = {  # 공모전 검색 조건
 
 PAGE_EXTRACTION_CONCURRENCY = 5
 
-SEOUL_TIMEZONE = ZoneInfo("Asia/Seoul")
 logger = logging.getLogger(__name__)
 
 
@@ -58,8 +57,8 @@ def _published_on_date(page: dict, target_date: date) -> bool:
         return False
 
     if published_at.tzinfo is None:
-        published_at = published_at.replace(tzinfo=SEOUL_TIMEZONE)
-    return published_at.astimezone(SEOUL_TIMEZONE).date() == target_date
+        published_at = published_at.replace(tzinfo=settings.TIMEZONE)
+    return published_at.astimezone(settings.TIMEZONE).date() == target_date
 
 
 def _uos_link_context_blocks(full_text: str) -> list[dict]:
@@ -123,7 +122,7 @@ async def extract_uos_page(page: dict) -> dict:
 
 async def collect_uos() -> list[dict]:
     # 자정 기준으로 전일 게시된 공지만 수집
-    yesterday = datetime.now(SEOUL_TIMEZONE).date() - timedelta(days=1)
+    yesterday = datetime.now(settings.TIMEZONE).date() - timedelta(days=1)
     general, haksa = await asyncio.gather(
         asyncio.to_thread(parse_uos_rss, UOS_RSS_GENERAL),
         asyncio.to_thread(parse_uos_rss, UOS_RSS_HAKSA),
@@ -235,7 +234,7 @@ async def extract_contest_korea_page(page: dict):
 
 async def collect_contest_korea() -> list[dict]:
     # 자정 기준으로 전일 게시된 공지만 수집
-    yesterday = (datetime.now(SEOUL_TIMEZONE) - timedelta(days=1)).date()
+    yesterday = (datetime.now(settings.TIMEZONE) - timedelta(days=1)).date()
     competition_urls, activity_urls = await asyncio.gather(
         _contest_korea_detail_urls(CONTEST_KOREA_CONTEST_LIST, yesterday),
         _contest_korea_detail_urls(CONTEST_KOREA_ACTIVITY_LIST, yesterday),

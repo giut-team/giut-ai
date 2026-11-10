@@ -13,6 +13,7 @@ from src.services.extraction import get_models
 from src.config import settings
 
 logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
 
 
 @asynccontextmanager
