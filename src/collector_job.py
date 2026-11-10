@@ -34,8 +34,8 @@ async def run_daily_collector(x_ai_api_key: str) -> None:
         try:
             await collect_and_post(x_ai_api_key)
             logger.info("공모전 수집 및 전송 성공")
-        except Exception:
-            logger.exception("공모전 수집 또는 전송 실패")
+        except Exception as exc:
+            logger.exception("공모전 수집 또는 전송 실패: %r", exc)
 
 
 if __name__ == "__main__":
