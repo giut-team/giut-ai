@@ -21,7 +21,6 @@ from src.parsers.contest_korea_parser import parse_contest_korea
 
 UOS_RSS_GENERAL = "https://www.uos.ac.kr/rss/gBoard.do"
 UOS_RSS_HAKSA = "https://www.uos.ac.kr/rss/hBoard.do"
-PAGE_EXTRACTION_CONCURRENCY = 5
 
 CONTEST_KOREA_CONTEST_LIST = (
     "https://www.contestkorea.com/sub/list.php?int_gbn=1"  # 공모전/대회
@@ -29,6 +28,7 @@ CONTEST_KOREA_CONTEST_LIST = (
 CONTEST_KOREA_ACTIVITY_LIST = (
     "https://www.contestkorea.com/sub/list.php?int_gbn=2"  # 대외활동
 )
+CONTEST_KOREA_SCAN_LIMIT = 30  # 각 목록 앞 30개에서 전일 게시물만 선택
 CONTEST_KOREA_FILTERS = {  # 공모전 검색 조건
     "Txt_sortkey": "a.int_sort",
     "Txt_sortword": "desc",
@@ -39,6 +39,8 @@ CONTEST_KOREA_FILTERS = {  # 공모전 검색 조건
     "Txt_area[1]": "97",  # 온라인
     "Txt_area[2]": "31",  # 서울
 }
+
+PAGE_EXTRACTION_CONCURRENCY = 5
 
 SEOUL_TIMEZONE = ZoneInfo("Asia/Seoul")
 logger = logging.getLogger(__name__)
@@ -147,8 +149,9 @@ async def _contest_korea_detail_urls(list_url: str, yesterday: date) -> list[str
     first_page = True
     detail_urls = []
     seen_urls = set()
+    scanned_entries = 0
 
-    while page_url:
+    while page_url and scanned_entries < CONTEST_KOREA_SCAN_LIMIT:
         response = await asyncio.to_thread(
             requests.get,
             page_url,
@@ -165,8 +168,10 @@ async def _contest_korea_detail_urls(list_url: str, yesterday: date) -> list[str
         if not entries:
             break
 
-        reached_older_entry = False
-        for entry in entries:
+        # 사이트의 목록 순서는 게시일 순서가 아니므로 오래된 글이 나와도 CONTEST_KOREA_SCAN_LIMIT 범위 내에서 계속 확인
+        candidates = entries[: CONTEST_KOREA_SCAN_LIMIT - scanned_entries]
+        scanned_entries += len(candidates)
+        for entry in candidates:
             url = urljoin(response.url, entry["href"])
             str_no = parse_qs(urlparse(url).query).get("str_no", [""])[0]
             try:
@@ -177,14 +182,11 @@ async def _contest_korea_detail_urls(list_url: str, yesterday: date) -> list[str
                 )
                 continue
 
-            if posted_date < yesterday:
-                reached_older_entry = True
-                break
             if posted_date == yesterday and url not in seen_urls:
                 seen_urls.add(url)
                 detail_urls.append(url)
 
-        if reached_older_entry:
+        if scanned_entries >= CONTEST_KOREA_SCAN_LIMIT:
             break
 
         current_page = int(parse_qs(urlparse(response.url).query).get("page", ["1"])[0])
