@@ -7,13 +7,20 @@ from logging.handlers import TimedRotatingFileHandler
 from pathlib import Path
 from threading import Lock
 from typing import Literal
+from urllib.parse import urlparse
 
 from openai.types import CompletionUsage
 
 from src.config import BASE_DIR, settings
 from src.llm.openai_client import create_json_completion
-from src.llm.dto import ExtractedFields, SelectedExtractedFields
-from src.llm.prompts import FIELDS_DESCRIPTION, OPENAI_LLM_PROMPT, OPENAI_VLM_PROMPT
+from src.llm.dto import ExtractedFields
+from src.llm.prompts import (
+    FIELDS_DESCRIPTION,
+    CONTEST_LLM_PROMPT,
+    CONTEST_VLM_PROMPT,
+    UOS_LLM_PROMPT,
+    UOS_VLM_PROMPT,
+)
 
 logger = logging.getLogger(__name__)
 _usage_logger = logging.getLogger(f"{__name__}.usage")
@@ -33,7 +40,7 @@ def write_gpt_usage_log(
     status: Literal["success", "error"] = "success",
     error_type: str | None = None,
 ) -> None:
-    """시작·종료 시각으로 elapsed_ms를 계산하고 GPT 호출 한 건을 JSONL로 기록."""
+    """시작·종료 시각으로 elapsed_ms를 계산하고 GPT 호출 한 건을 JSONL로 기록"""
     if started_at.utcoffset() is None or ended_at.utcoffset() is None:
         raise ValueError("started_at, ended_at에 시간대가 필요합니다.")
     if request_type not in {"text", "image"}:
@@ -89,15 +96,28 @@ def write_gpt_usage_log(
 
 
 async def extract_fields_from_text(
-    page_text: str, source_url: str, keys: list[str] = FIELDS_DESCRIPTION.keys()
+    page_text: str,
+    source_url: str,
+    keys: list[str] = FIELDS_DESCRIPTION.keys(),
 ) -> dict:
+    hostname = urlparse(source_url).hostname or ""
+    if hostname == "uos.ac.kr" or hostname.endswith(".uos.ac.kr"):
+        # 시립대(uos.ac.kr) 공지는 전용 프롬프트 사용
+        prompt = UOS_LLM_PROMPT
+    else:
+        prompt = CONTEST_LLM_PROMPT
+
+    # 추출할 키 및 관련 설명만 기본 프롬프트에 추가
+    descriptions = [FIELDS_DESCRIPTION[key] for key in keys]
+    prompt += "\n".join(descriptions)
+
     try:
         started_at = datetime.now(timezone.utc)
         response = await create_json_completion(
             messages=[
                 {
                     "role": "developer",
-                    "content": [{"type": "text", "text": OPENAI_LLM_PROMPT}],
+                    "content": [{"type": "text", "text": prompt}],
                 },
                 {"role": "user", "content": [{"type": "text", "text": page_text}]},
             ],
@@ -130,11 +150,20 @@ async def extract_fields_from_text(
 
 
 async def extract_fields_from_images(
-    image_urls: list[str], source_url: str, keys: list[str] = FIELDS_DESCRIPTION.keys()
+    image_urls: list[str],
+    source_url: str,
+    keys: list[str] = FIELDS_DESCRIPTION.keys(),
 ) -> dict:
+    hostname = urlparse(source_url).hostname or ""
+    if hostname == "uos.ac.kr" or hostname.endswith(".uos.ac.kr"):
+        # 시립대(uos.ac.kr) 공지는 전용 프롬프트 사용
+        prompt = UOS_VLM_PROMPT
+    else:
+        prompt = CONTEST_VLM_PROMPT
+
     # 추출할 키 및 관련 설명만 기본 프롬프트에 추가
     descriptions = [FIELDS_DESCRIPTION[key] for key in keys]
-    prompt = OPENAI_VLM_PROMPT + "\n".join(descriptions)
+    prompt += "\n".join(descriptions)
 
     try:
         started_at = datetime.now(timezone.utc)

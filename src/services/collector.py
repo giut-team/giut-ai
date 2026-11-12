@@ -105,6 +105,7 @@ async def extract_uos_page(page: dict) -> dict:
     ]
 
     if not is_eligible_activity(extracted_fields):
+        extracted_fields["is_eligible"] = False
         return extracted_fields
 
     missing_keys = [key for key, value in extracted_fields.items() if value is None]
@@ -117,6 +118,9 @@ async def extract_uos_page(page: dict) -> dict:
                 extracted_fields[key] = value
     extracted_fields["images"] = page["images"]
 
+    extracted_fields["is_eligible"] = is_eligible_activity(extracted_fields)
+    if extracted_fields["application_end_at"] is None:
+        extracted_fields["is_eligible"] = False
     return extracted_fields
 
 
@@ -202,7 +206,7 @@ async def _contest_korea_detail_urls(list_url: str, yesterday: date) -> list[str
     return detail_urls
 
 
-async def extract_contest_korea_page(page: dict):
+async def extract_contest_korea_page(page: dict) -> dict:
     extracted_fields = {key: page.get(key, None) for key in FIELDS_DESCRIPTION.keys()}
     extracted_fields["urls"] = page["urls"]
 
@@ -216,6 +220,7 @@ async def extract_contest_korea_page(page: dict):
         extracted_fields[key] = value
 
     if not is_eligible_activity(extracted_fields):
+        extracted_fields["is_eligible"] = False
         return extracted_fields
 
     missing_keys = [key for key, value in extracted_fields.items() if value is None]
@@ -229,6 +234,9 @@ async def extract_contest_korea_page(page: dict):
             if value is not None:
                 extracted_fields[key] = value
 
+    extracted_fields["is_eligible"] = is_eligible_activity(extracted_fields)
+    if extracted_fields["application_end_at"] is None:
+        extracted_fields["is_eligible"] = False
     return extracted_fields
 
 

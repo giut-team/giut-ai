@@ -1,3 +1,4 @@
+from datetime import date
 import re
 import base64
 import asyncio
@@ -72,15 +73,20 @@ def get_models():
 
 def is_eligible_activity(extracted_fields: dict) -> bool:
     """참여할 수 없는 활동이거나 팀 참가가 불가능한 경우 필터링 함수"""
+    application_end_at = extracted_fields.get("application_end_at", None)
     target_participants = extracted_fields.get("target_participants", None)
     activity_kind = extracted_fields.get("activity_kind", None)
     is_team = extracted_fields.get("is_team", None)
 
     if (
-        target_participants == TargetParticipantsEnum.NONE
+        (application_end_at is not None and application_end_at < date.today())
+        or target_participants == TargetParticipantsEnum.NONE
         or activity_kind == ActivityKindEnum.INVALID_ACTIVITY
         or is_team == False
     ):
+        logger.info(
+            "[필터링됨] " + str([f"{k}: {v}" for k, v in extracted_fields.items()])
+        )
         return False
 
     return True
