@@ -133,17 +133,23 @@ async def collect_uos() -> list[dict]:
     )
     semaphore = asyncio.Semaphore(PAGE_EXTRACTION_CONCURRENCY)
 
-    async def extract_limited(page: dict):
+    async def extract_limited(page: dict) -> dict | None:
         async with semaphore:
-            return await extract_uos_page(page)
+            try:
+                return await extract_uos_page(page)
+            except Exception:
+                # 한 페이지 실패가 전체 수집을 중단시키지 않도록 로그만 남기고 제외
+                logger.exception("시립대 공지 추출 실패: %s", page.get("source_url"))
+                return None
 
-    return await asyncio.gather(
+    results = await asyncio.gather(
         *(
             extract_limited(page)
             for page in general + haksa
             if _published_on_date(page, yesterday)
         )
     )
+    return [result for result in results if result is not None]
 
 
 async def _contest_korea_detail_urls(list_url: str, yesterday: date) -> list[str]:
@@ -261,8 +267,14 @@ async def collect_contest_korea() -> list[dict]:
 
     semaphore = asyncio.Semaphore(PAGE_EXTRACTION_CONCURRENCY)
 
-    async def extract_limited(page: dict):
+    async def extract_limited(page: dict) -> dict:
         async with semaphore:
-            return await extract_contest_korea_page(page)
+            try:
+                return await extract_contest_korea_page(page)
+            except Exception:
+                # 한 페이지 실패가 전체 수집을 중단시키지 않도록 로그만 남기고 제외
+                logger.exception("콘테스트코리아 추출 실패: %s", page.get("source_url"))
+                return None
 
-    return await asyncio.gather(*(extract_limited(page) for page in results))
+    extracted = await asyncio.gather(*(extract_limited(page) for page in results))
+    return [result for result in extracted if result is not None]

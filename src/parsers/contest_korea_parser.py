@@ -59,12 +59,12 @@ def _link(node: Tag | None) -> str | None:
     return None
 
 
-def _date(value: str) -> str | None:
+def _date(value: str) -> date | None:
     match = re.search(r"(\d{4})\s*[.\-/]\s*(\d{1,2})\s*[.\-/]\s*(\d{1,2})", value)
     if not match:
         return None
     try:
-        return date(*(int(part) for part in match.groups())).isoformat()
+        return date(*(int(part) for part in match.groups()))
     except ValueError:
         return None
 
@@ -196,7 +196,7 @@ def parse_contest_korea_html(
     category = _text(field("대표분야", "카테고리", "분야"))
     prize = _text(field("시상내역"))
 
-    # 접수기간은 YYYY-MM-DD형식. 양 끝을 따로 처리해 '미정 ~ 2026.09.30'도 마감일로 인식
+    # 접수기간은 YYYY-MM-DD형식 (date 객체로 변환). 양 끝을 따로 처리해 '미정 ~ 2026.09.30'도 마감일로 인식
     period = _text(field("접수기간")) or ""
     endpoints = re.split(r"\s*[~～∼]\s*", period, maxsplit=1)
     application_start_at = _date(endpoints[0])
@@ -271,6 +271,7 @@ if __name__ == "__main__":
                     parse_contest_korea(url),
                     ensure_ascii=False,
                     indent=2,
+                    default=str,  # date 직렬화
                 )
             )
         except ValueError as e:
