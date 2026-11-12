@@ -11,11 +11,14 @@ logger = logging.getLogger(__name__)
 
 async def collect_and_post(x_ai_api_key: str) -> None:
     """시립대 공지 및 콘테스트코리아에서 추출한 결과 리스트 전체 전송"""
-    logger.info("공모전 정보 수집 시작")
     uos_results, contest_korea_results = await asyncio.gather(
         collect_uos(), collect_contest_korea()
     )
-    payload = uos_results + contest_korea_results
+    payload = [
+        result
+        for result in uos_results + contest_korea_results
+        if result.get("is_eligible")
+    ]
     await asyncio.to_thread(post_competition, payload, x_ai_api_key)
 
 
@@ -32,6 +35,7 @@ async def run_daily_collector(x_ai_api_key: str) -> None:
         await asyncio.sleep((next_midnight - now).total_seconds())
 
         try:
+            logger.info("공모전 정보 수집 시작")
             await collect_and_post(x_ai_api_key)
             logger.info("공모전 수집 및 전송 성공")
         except Exception as exc:

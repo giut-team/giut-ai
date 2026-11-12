@@ -8,6 +8,7 @@ from urllib.parse import parse_qs, urljoin, urlparse
 import requests
 from bs4 import BeautifulSoup
 
+from src.llm.dto import CategoryEnum
 from src.config import settings
 from src.services.constants import UrlType
 from src.services.extraction import (
@@ -105,6 +106,7 @@ async def extract_uos_page(page: dict) -> dict:
     ]
 
     if not is_eligible_activity(extracted_fields):
+        extracted_fields["is_eligible"] = False
         return extracted_fields
 
     missing_keys = [key for key, value in extracted_fields.items() if value is None]
@@ -117,6 +119,17 @@ async def extract_uos_page(page: dict) -> dict:
                 extracted_fields[key] = value
     extracted_fields["images"] = page["images"]
 
+    if not extracted_fields["category"]:
+        # 카테고리 분류에 실패했을 경우 '기타'로 분류
+        extracted_fields["category"] = [CategoryEnum.ETC]
+
+    extracted_fields["is_eligible"] = is_eligible_activity(extracted_fields)
+    if (
+        extracted_fields["application_end_at"] is None
+        or not extracted_fields["is_team"]
+    ):
+        extracted_fields["is_eligible"] = False
+        logger.info(f"[필터링됨] {extracted_fields}")
     return extracted_fields
 
 
@@ -129,17 +142,23 @@ async def collect_uos() -> list[dict]:
     )
     semaphore = asyncio.Semaphore(PAGE_EXTRACTION_CONCURRENCY)
 
-    async def extract_limited(page: dict):
+    async def extract_limited(page: dict) -> dict | None:
         async with semaphore:
-            return await extract_uos_page(page)
+            try:
+                return await extract_uos_page(page)
+            except Exception:
+                # 한 페이지 실패가 전체 수집을 중단시키지 않도록 로그만 남기고 제외
+                logger.exception("시립대 공지 추출 실패: %s", page.get("source_url"))
+                return None
 
-    return await asyncio.gather(
+    results = await asyncio.gather(
         *(
             extract_limited(page)
             for page in general + haksa
             if _published_on_date(page, yesterday)
         )
     )
+    return [result for result in results if result is not None]
 
 
 async def _contest_korea_detail_urls(list_url: str, yesterday: date) -> list[str]:
@@ -202,7 +221,7 @@ async def _contest_korea_detail_urls(list_url: str, yesterday: date) -> list[str
     return detail_urls
 
 
-async def extract_contest_korea_page(page: dict):
+async def extract_contest_korea_page(page: dict) -> dict:
     extracted_fields = {key: page.get(key, None) for key in FIELDS_DESCRIPTION.keys()}
     extracted_fields["urls"] = page["urls"]
 
@@ -216,6 +235,7 @@ async def extract_contest_korea_page(page: dict):
         extracted_fields[key] = value
 
     if not is_eligible_activity(extracted_fields):
+        extracted_fields["is_eligible"] = False
         return extracted_fields
 
     missing_keys = [key for key, value in extracted_fields.items() if value is None]
@@ -229,6 +249,17 @@ async def extract_contest_korea_page(page: dict):
             if value is not None:
                 extracted_fields[key] = value
 
+    if not extracted_fields["category"]:
+        # 카테고리 분류에 실패했을 경우 '기타'로 분류
+        extracted_fields["category"] = [CategoryEnum.ETC]
+
+    extracted_fields["is_eligible"] = is_eligible_activity(extracted_fields)
+    if (
+        extracted_fields["application_end_at"] is None
+        or not extracted_fields["is_team"]
+    ):
+        extracted_fields["is_eligible"] = False
+        logger.info(f"[필터링됨] {extracted_fields}")
     return extracted_fields
 
 
@@ -253,8 +284,14 @@ async def collect_contest_korea() -> list[dict]:
 
     semaphore = asyncio.Semaphore(PAGE_EXTRACTION_CONCURRENCY)
 
-    async def extract_limited(page: dict):
+    async def extract_limited(page: dict) -> dict:
         async with semaphore:
-            return await extract_contest_korea_page(page)
+            try:
+                return await extract_contest_korea_page(page)
+            except Exception:
+                # 한 페이지 실패가 전체 수집을 중단시키지 않도록 로그만 남기고 제외
+                logger.exception("콘테스트코리아 추출 실패: %s", page.get("source_url"))
+                return None
 
-    return await asyncio.gather(*(extract_limited(page) for page in results))
+    extracted = await asyncio.gather(*(extract_limited(page) for page in results))
+    return [result for result in extracted if result is not None]

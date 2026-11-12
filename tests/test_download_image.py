@@ -8,6 +8,7 @@ import torch
 from PIL import Image
 
 from src.services import extraction
+from src.utils import image as image_utils
 
 
 @pytest.fixture
@@ -19,10 +20,10 @@ def image_bytes():
 
 def test_download_base64_image(image_bytes, monkeypatch):
     get = MagicMock()
-    monkeypatch.setattr(extraction.requests, "get", get)
+    monkeypatch.setattr(image_utils.requests, "get", get)
     url = "data:image/png;base64," + base64.b64encode(image_bytes).decode("ascii")
 
-    image = extraction._download_image(url)
+    image = image_utils.download_image(url)
     assert isinstance(image, Image.Image)
     assert image.format == "PNG"
     assert image.size == (2, 3)
@@ -36,10 +37,10 @@ def test_download_http_image(scheme, image_bytes, monkeypatch):
     response.content = image_bytes
     get = MagicMock()
     get.return_value.__enter__.return_value = response
-    monkeypatch.setattr(extraction.requests, "get", get)
+    monkeypatch.setattr(image_utils.requests, "get", get)
     url = f"{scheme}://example.com/image.png"
 
-    image = extraction._download_image(url, timeout=5.0)
+    image = image_utils.download_image(url, timeout=5.0)
     assert isinstance(image, Image.Image)
     assert image.format == "PNG"
     assert image.size == (2, 3)
@@ -64,7 +65,7 @@ def test_download_http_image(scheme, image_bytes, monkeypatch):
 )
 def test_download_rejects_invalid_source(url):
     with pytest.raises(ValueError):
-        extraction._download_image(url)
+        image_utils.download_image(url)
 
 
 def test_download_propagates_http_errors(monkeypatch):
@@ -72,10 +73,10 @@ def test_download_propagates_http_errors(monkeypatch):
     response.raise_for_status.side_effect = requests.HTTPError("404")
     get = MagicMock()
     get.return_value.__enter__.return_value = response
-    monkeypatch.setattr(extraction.requests, "get", get)
+    monkeypatch.setattr(image_utils.requests, "get", get)
 
     with pytest.raises(requests.HTTPError):
-        extraction._download_image("https://example.com/missing.png")
+        image_utils.download_image("https://example.com/missing.png")
 
 
 def test_classifier_loads_base64_and_skips_invalid_images(image_bytes, monkeypatch):

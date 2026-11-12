@@ -14,8 +14,6 @@ logger = logging.getLogger(__name__)
 
 
 class SelectedExtractedFields(BaseModel):
-    model_config = ConfigDict(use_enum_values=True)
-
     def to_dict(self) -> dict:
         return self.model_dump()
 

@@ -59,14 +59,24 @@ def _link(node: Tag | None) -> str | None:
     return None
 
 
-def _date(value: str) -> str | None:
+def _date(value: str) -> date | None:
     match = re.search(r"(\d{4})\s*[.\-/]\s*(\d{1,2})\s*[.\-/]\s*(\d{1,2})", value)
     if not match:
         return None
     try:
-        return date(*(int(part) for part in match.groups())).isoformat()
+        return date(*(int(part) for part in match.groups()))
     except ValueError:
         return None
+
+
+def _host_organization(value: str | None) -> str | None:
+    """'/'로 나뉜 기관명이 모두 같은 경우(예: 'A / A', 'A / A / A') 하나로 합침"""
+    if not value:
+        return value
+    parts = [part.strip() for part in value.split("/")]
+    if len(parts) >= 2 and parts[0] and len(set(parts)) == 1:
+        return parts[0]
+    return value
 
 
 def _total_prize_amount(prize: str | None) -> int | None:
@@ -196,7 +206,7 @@ def parse_contest_korea_html(
     category = _text(field("대표분야", "카테고리", "분야"))
     prize = _text(field("시상내역"))
 
-    # 접수기간은 YYYY-MM-DD형식. 양 끝을 따로 처리해 '미정 ~ 2026.09.30'도 마감일로 인식
+    # 접수기간은 YYYY-MM-DD형식 (date 객체로 변환). 양 끝을 따로 처리해 '미정 ~ 2026.09.30'도 마감일로 인식
     period = _text(field("접수기간")) or ""
     endpoints = re.split(r"\s*[~～∼]\s*", period, maxsplit=1)
     application_start_at = _date(endpoints[0])
@@ -215,7 +225,9 @@ def parse_contest_korea_html(
 
     return {
         "title": title,
-        "host_organization": _text(field("주최기관", "주최", "주최 . 주관")),
+        "host_organization": _host_organization(
+            _text(field("주최기관", "주최", "주최 . 주관"))
+        ),
         "target_participants": target_participants,
         "is_for_enrolled_only": (
             target_participants == TargetParticipantsEnum.UNIV_ONLY
@@ -271,6 +283,7 @@ if __name__ == "__main__":
                     parse_contest_korea(url),
                     ensure_ascii=False,
                     indent=2,
+                    default=str,  # date 직렬화
                 )
             )
         except ValueError as e:

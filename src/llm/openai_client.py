@@ -10,4 +10,5 @@ def create_json_completion(messages: list[dict], response_format: type):
         messages=messages,
         response_format=response_format,
         store=False,
+        timeout=120.0,
     )

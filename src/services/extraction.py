@@ -1,13 +1,11 @@
+from datetime import date
 import re
-import base64
 import asyncio
 import logging
 from functools import lru_cache
-from io import BytesIO
 from pathlib import Path
 from urllib.parse import urlparse
 
-from PIL import Image
 import joblib
 import requests
 import torch
@@ -18,6 +16,7 @@ from src.llm.field_extractor import extract_fields_from_images, extract_fields_f
 from src.ml.image_classifier import ImageClassifier
 from src.ml.text_classifier import TextClassifier, tokenize
 from src.parsers.html_parser import HtmlParser
+from src.utils.image import download_image
 
 from src.services.constants import (
     CAMPUSPICK_HOSTNAME,
@@ -72,15 +71,18 @@ def get_models():
 
 def is_eligible_activity(extracted_fields: dict) -> bool:
     """참여할 수 없는 활동이거나 팀 참가가 불가능한 경우 필터링 함수"""
+    application_end_at = extracted_fields.get("application_end_at", None)
     target_participants = extracted_fields.get("target_participants", None)
     activity_kind = extracted_fields.get("activity_kind", None)
     is_team = extracted_fields.get("is_team", None)
 
     if (
-        target_participants == TargetParticipantsEnum.NONE
+        (application_end_at is not None and application_end_at < date.today())
+        or target_participants == TargetParticipantsEnum.NONE
         or activity_kind == ActivityKindEnum.INVALID_ACTIVITY
         or is_team == False
     ):
+        logger.info(f"[필터링됨] {extracted_fields}")
         return False
 
     return True
@@ -206,35 +208,6 @@ def _load_page_text(blocks: list[dict]) -> str:
     return page_text
 
 
-def _download_image(url: str, timeout: float = 30.0) -> Image:
-    """HTTP(S) 이미지 주소 또는 Base64 데이터 URL을 PIL 이미지로 로드"""
-    parsed_url = urlparse(url)
-    if parsed_url.scheme.lower() == "data":
-        header, separator, encoded = url.partition(",")
-        if (
-            not separator
-            or not header.lower().startswith("data:image/")
-            or not header.lower().endswith(";base64")
-        ):
-            raise ValueError("이미지 주소가 Base64 이미지 데이터 URL이 아님")
-        image_bytes = base64.b64decode(encoded, validate=True)
-    else:
-        if parsed_url.scheme.lower() not in {"http", "https"} or not parsed_url.netloc:
-            raise ValueError(
-                "이미지 주소가 HTTP(S) URL 또는 Base64 이미지 데이터 URL이 아님"
-            )
-
-        with requests.get(
-            url, headers={"User-Agent": "Mozilla/5.0"}, timeout=timeout
-        ) as response:
-            response.raise_for_status()
-            image_bytes = response.content
-
-    with Image.open(BytesIO(image_bytes)) as image:
-        image.load()
-        return image
-
-
 def run_text_classifier(text_blocks: list[dict]):
     relevant_blocks = []
     scaler, classifier, _ = get_models()
@@ -273,7 +246,7 @@ def run_image_classifier(image_blocks: list[dict]):
     downloaded_images = []
     for image in image_blocks:
         try:
-            downloaded = _download_image(image["src"])
+            downloaded = download_image(image["src"])
         except (requests.RequestException, OSError, ValueError) as exc:
             logger.warning("[SKIP] 이미지 다운로드 실패: %s (%s)", image["src"], exc)
             continue
