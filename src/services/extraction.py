@@ -82,9 +82,7 @@ def is_eligible_activity(extracted_fields: dict) -> bool:
         or activity_kind == ActivityKindEnum.INVALID_ACTIVITY
         or is_team == False
     ):
-        logger.info(
-            "[필터링됨] " + str([f"{k}: {v}" for k, v in extracted_fields.items()])
-        )
+        logger.info(f"[필터링됨] {extracted_fields}")
         return False
 
     return True

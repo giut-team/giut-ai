@@ -8,6 +8,7 @@ from urllib.parse import parse_qs, urljoin, urlparse
 import requests
 from bs4 import BeautifulSoup
 
+from src.llm.dto import CategoryEnum
 from src.config import settings
 from src.services.constants import UrlType
 from src.services.extraction import (
@@ -118,9 +119,17 @@ async def extract_uos_page(page: dict) -> dict:
                 extracted_fields[key] = value
     extracted_fields["images"] = page["images"]
 
+    if not extracted_fields["category"]:
+        # 카테고리 분류에 실패했을 경우 '기타'로 분류
+        extracted_fields["category"] = [CategoryEnum.ETC]
+
     extracted_fields["is_eligible"] = is_eligible_activity(extracted_fields)
-    if extracted_fields["application_end_at"] is None:
+    if (
+        extracted_fields["application_end_at"] is None
+        or not extracted_fields["is_team"]
+    ):
         extracted_fields["is_eligible"] = False
+        logger.info(f"[필터링됨] {extracted_fields}")
     return extracted_fields
 
 
@@ -240,9 +249,17 @@ async def extract_contest_korea_page(page: dict) -> dict:
             if value is not None:
                 extracted_fields[key] = value
 
+    if not extracted_fields["category"]:
+        # 카테고리 분류에 실패했을 경우 '기타'로 분류
+        extracted_fields["category"] = [CategoryEnum.ETC]
+
     extracted_fields["is_eligible"] = is_eligible_activity(extracted_fields)
-    if extracted_fields["application_end_at"] is None:
+    if (
+        extracted_fields["application_end_at"] is None
+        or not extracted_fields["is_team"]
+    ):
         extracted_fields["is_eligible"] = False
+        logger.info(f"[필터링됨] {extracted_fields}")
     return extracted_fields
 
 

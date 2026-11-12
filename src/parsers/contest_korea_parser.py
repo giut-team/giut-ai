@@ -69,6 +69,16 @@ def _date(value: str) -> date | None:
         return None
 
 
+def _host_organization(value: str | None) -> str | None:
+    """'/'로 나뉜 기관명이 모두 같은 경우(예: 'A / A', 'A / A / A') 하나로 합침"""
+    if not value:
+        return value
+    parts = [part.strip() for part in value.split("/")]
+    if len(parts) >= 2 and parts[0] and len(set(parts)) == 1:
+        return parts[0]
+    return value
+
+
 def _total_prize_amount(prize: str | None) -> int | None:
     if not prize:
         return None
@@ -215,7 +225,9 @@ def parse_contest_korea_html(
 
     return {
         "title": title,
-        "host_organization": _text(field("주최기관", "주최", "주최 . 주관")),
+        "host_organization": _host_organization(
+            _text(field("주최기관", "주최", "주최 . 주관"))
+        ),
         "target_participants": target_participants,
         "is_for_enrolled_only": (
             target_participants == TargetParticipantsEnum.UNIV_ONLY
