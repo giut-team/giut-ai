@@ -8,6 +8,7 @@ from pydantic import BaseModel, ValidationError
 from starlette.exceptions import HTTPException
 
 from src.parsers.html_parser import InaccessibleURLError
+from src.services.extraction import InvalidContestError
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +41,9 @@ def register_exception_handlers(app: FastAPI) -> None:
     ) -> JSONResponse:
         return JSONResponse(
             status_code=422,
-            content=ErrorResponse(detail=_first_error_reason(exc.errors())).model_dump(),
+            content=ErrorResponse(
+                detail=_first_error_reason(exc.errors())
+            ).model_dump(),
         )
 
     @app.exception_handler(InaccessibleURLError)
@@ -52,6 +55,15 @@ def register_exception_handlers(app: FastAPI) -> None:
         return JSONResponse(
             status_code=400,
             content=ErrorResponse(detail="잘못된 형식의 url입니다.").model_dump(),
+        )
+
+    @app.exception_handler(InvalidContestError)
+    async def handle_invalid_contest(
+        request: Request, exc: InvalidContestError
+    ) -> JSONResponse:
+        return JSONResponse(
+            status_code=400,
+            content=ErrorResponse(detail=str(exc)).model_dump(),
         )
 
     @app.exception_handler(ValueError)

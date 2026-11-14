@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import datetime
 import re
 import asyncio
 import logging
@@ -10,8 +10,8 @@ import joblib
 import requests
 import torch
 
-
-from src.llm.dto import ActivityKindEnum, TargetParticipantsEnum
+from src.config import settings
+from src.llm.dto import ActivityKindEnum, CategoryEnum, TargetParticipantsEnum
 from src.llm.field_extractor import extract_fields_from_images, extract_fields_from_text
 from src.ml.image_classifier import ImageClassifier
 from src.ml.text_classifier import TextClassifier, tokenize
@@ -42,6 +42,10 @@ IMAGE_CLASSIFIER_PATH = MODEL_DIR / "image_classifier" / "image_classifier.pt"
 TEXT_CLASSIFIER_CONCURRENCY = 1
 
 
+class InvalidContestError(Exception):
+    """필드 추출 결과가 조건에 맞지 않을 시 발생하는 예외"""
+
+
 @lru_cache(maxsize=1)
 def get_models():
     """텍스트/이미지 분류기 모델 생성 및 가중치 로드"""
@@ -69,23 +73,48 @@ def get_models():
     return scaler, text_classifier, image_classifier
 
 
-def is_eligible_activity(extracted_fields: dict) -> bool:
+def check_valid_activity_after_text(extracted_fields: dict):
     """참여할 수 없는 활동이거나 팀 참가가 불가능한 경우 필터링 함수"""
     application_end_at = extracted_fields.get("application_end_at", None)
     target_participants = extracted_fields.get("target_participants", None)
     activity_kind = extracted_fields.get("activity_kind", None)
     is_team = extracted_fields.get("is_team", None)
 
-    if (
-        (application_end_at is not None and application_end_at < date.today())
-        or target_participants == TargetParticipantsEnum.NONE
-        or activity_kind == ActivityKindEnum.INVALID_ACTIVITY
-        or is_team == False
-    ):
-        logger.info(f"[필터링됨] {extracted_fields}")
-        return False
+    error_message = ""
 
-    return True
+    if (
+        application_end_at is not None
+        and application_end_at < datetime.now(settings.TIMEZONE).date()
+    ):
+        error_message = "마감일이 지난 활동입니다."
+    elif target_participants == TargetParticipantsEnum.NONE:
+        error_message = "대학(원)생이 참가할 수 없는 활동입니다."
+    elif activity_kind == ActivityKindEnum.INVALID_ACTIVITY:
+        error_message = "공모전 및 대외활동에 해당하지 않습니다."
+    elif is_team == False:
+        error_message = "팀으로 참가할 수 없는 활동입니다."
+
+    if error_message:
+        logger.info(f"[필터링됨] {extracted_fields}")
+        raise InvalidContestError(error_message)
+
+
+def check_valid_activity_after_image(extracted_fields: dict):
+    check_valid_activity_after_text(extracted_fields)
+
+    application_end_at = extracted_fields.get("application_end_at", None)
+    is_team = extracted_fields.get("is_team", None)
+
+    error_message = ""
+
+    if not application_end_at:
+        error_message = "신청 마감일 정보를 찾을 수 없습니다."
+    elif not is_team:
+        error_message = "팀으로 참가할 수 없는 활동입니다."
+
+    if error_message:
+        logger.info(f"[필터링됨] {extracted_fields}")
+        raise InvalidContestError(error_message)
 
 
 def _link_context_blocks(link_blocks: list[dict]) -> list[dict]:
@@ -297,8 +326,7 @@ async def run_pipeline(url: str, use_classifier: bool = True):
         },
     ]  # 수집 경로 및 공식 홈페이지 URL 추가
 
-    if not is_eligible_activity(extracted_fields):
-        return extracted_fields
+    check_valid_activity_after_text(extracted_fields)
 
     missing_keys = [key for key, value in extracted_fields.items() if value is None]
 
@@ -333,6 +361,12 @@ async def run_pipeline(url: str, use_classifier: bool = True):
         for key, value in image_extracted_fields.items():
             if value is not None:
                 extracted_fields[key] = value
+
+    check_valid_activity_after_image(extracted_fields)
+
+    if not extracted_fields["category"]:
+        # 카테고리 분류에 실패했을 경우 '기타'로 분류
+        extracted_fields["category"] = [CategoryEnum.ETC]
 
     return extracted_fields
 

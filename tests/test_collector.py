@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import threading
 from datetime import date, datetime
 from types import SimpleNamespace
@@ -9,16 +10,15 @@ import requests
 
 from src.config import settings
 from src.services import collector
+from src.services.extraction import InvalidContestError
 from src import collector_job
 from src import backend_client
 
 
-def test_collect_and_post_sends_only_eligible_results_in_one_request(monkeypatch):
-    uos_results = [
-        {"title": "first", "is_eligible": True},
-        {"title": "filtered", "is_eligible": False},
-    ]
-    contest_korea_results = [{"title": "second", "is_eligible": True}]
+def test_collect_and_post_sends_all_results_in_one_request(monkeypatch):
+    # 부적합 활동은 수집 단계에서 InvalidContestError로 이미 제외됨
+    uos_results = [{"title": "first"}, {"title": "second"}]
+    contest_korea_results = [{"title": "third"}]
     sent = []
     started = []
     both_started = asyncio.Event()
@@ -48,7 +48,7 @@ def test_collect_and_post_sends_only_eligible_results_in_one_request(monkeypatch
 
     asyncio.run(asyncio.wait_for(collector_job.collect_and_post("test-key"), 3))
 
-    assert sent == [([uos_results[0], contest_korea_results[0]], "test-key")]
+    assert sent == [(uos_results + contest_korea_results, "test-key")]
 
 
 def test_collect_uos_fetches_feeds_and_extracts_pages_concurrently(monkeypatch):
@@ -142,6 +142,45 @@ def test_collect_uos_skips_pages_that_fail_extraction(monkeypatch):
     results = asyncio.run(asyncio.wait_for(collector.collect_uos(), 5))
 
     assert results == [{"title": "haksa"}]
+
+
+def test_collect_uos_logs_filtered_pages_as_info_without_traceback(
+    monkeypatch, caplog
+):
+    class FakeDateTime(datetime):
+        @classmethod
+        def now(cls, tz=None):
+            return cls(2026, 10, 29, 12, 0, tzinfo=tz)
+
+    def fake_parse_uos_rss(url):
+        title = "general" if url == collector.UOS_RSS_GENERAL else "haksa"
+        return [
+            {
+                "title": title,
+                "published_date": "Wed, 28 Oct 2026 09:00:00 +0900",
+                "source_url": f"https://www.uos.ac.kr/{title}",
+            }
+        ]
+
+    async def fake_extract_uos_page(page):
+        if page["title"] == "general":
+            raise InvalidContestError("팀으로 참가할 수 없는 활동입니다.")
+        raise RuntimeError("unexpected")
+
+    monkeypatch.setattr(collector, "datetime", FakeDateTime)
+    monkeypatch.setattr(collector, "parse_uos_rss", fake_parse_uos_rss)
+    monkeypatch.setattr(collector, "extract_uos_page", fake_extract_uos_page)
+
+    with caplog.at_level(logging.INFO, logger=collector.logger.name):
+        results = asyncio.run(asyncio.wait_for(collector.collect_uos(), 5))
+
+    assert results == []
+    filtered = [r for r in caplog.records if "필터링됨" in r.getMessage()]
+    failed = [r for r in caplog.records if "추출 실패" in r.getMessage()]
+    assert [(r.levelno, r.exc_info) for r in filtered] == [(logging.INFO, None)]
+    assert "팀으로 참가할 수 없는 활동입니다." in filtered[0].getMessage()
+    assert [r.levelno for r in failed] == [logging.ERROR]
+    assert failed[0].exc_info is not None
 
 
 def test_collect_contest_korea_filters_yesterday_across_pages(monkeypatch):

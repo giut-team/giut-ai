@@ -14,11 +14,7 @@ async def collect_and_post(x_ai_api_key: str) -> None:
     uos_results, contest_korea_results = await asyncio.gather(
         collect_uos(), collect_contest_korea()
     )
-    payload = [
-        result
-        for result in uos_results + contest_korea_results
-        if result.get("is_eligible")
-    ]
+    payload = [result for result in uos_results + contest_korea_results]
     await asyncio.to_thread(post_competition, payload, x_ai_api_key)
 
 
