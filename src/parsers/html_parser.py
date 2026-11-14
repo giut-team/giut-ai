@@ -112,6 +112,13 @@ class UnsafeURLError(ValueError):
     """내부망/사설 IP 등 안전하지 않은 주소로 판단되어 요청을 차단했을 때 발생"""
 
 
+class InaccessibleURLError(Exception):
+    """사용자가 준 URL에 접속할 수 없을 때 발생 (형식 오류, 차단된 주소, 연결·HTTP 오류)
+
+    내부 오류와 구분해 API에서 400으로 응답하기 위해 사용하며, 원인 예외는 __cause__에 보존
+    """
+
+
 @dataclass
 class ParsedPage:
     """text / images / links 모두 (구조 블록 / 링크 / 이미지) 단위 feature dict 리스트"""
@@ -163,6 +170,12 @@ class HtmlParser:
         return content
 
     def _fetch_static(self, url: str) -> bytes:
+        try:
+            return self._fetch_static_following_redirects(url)
+        except (UnsafeURLError, requests.RequestException) as exc:
+            raise InaccessibleURLError(str(exc)) from exc
+
+    def _fetch_static_following_redirects(self, url: str) -> bytes:
         """리다이렉트를 자동으로 따라가면 (allow_redirects=True)
         검증된 URL이 내부망으로 리다이렉트되는 SSRF 우회를 놓칠 수 있어 매 홉마다 직접 검증"""
         for _ in range(MAX_REDIRECTS + 1):
@@ -192,7 +205,10 @@ class HtmlParser:
 
     async def _fetch_rendered(self, url: str) -> bytes:
         """검증 페이지 이동 및 비동기 본문 로딩을 기다린 뒤 렌더링된 DOM 반환."""
-        self._validate_url(url)
+        try:
+            self._validate_url(url)
+        except UnsafeURLError as exc:
+            raise InaccessibleURLError(str(exc)) from exc
         browser = await self._ensure_browser()  # 브라우저가 열려 있으면 재사용
 
         page = await browser.new_page(
@@ -219,9 +235,13 @@ class HtmlParser:
             # 페이지 스스로도 자기 JS로 임의 주소에 요청을 보낼 수 있으므로 모든 하위 요청 검증
             await page.route("**/*", self._guard_route)
             deadline = monotonic() + self.timeout
-            await page.goto(
-                url, timeout=self.timeout * 1000, wait_until="domcontentloaded"
-            )  # "networkidle" 보다 안정적 (사이트 요청이 계속 들어올 경우 대비)
+            try:
+                await page.goto(
+                    url, timeout=self.timeout * 1000, wait_until="domcontentloaded"
+                )  # "networkidle" 보다 안정적 (사이트 요청이 계속 들어올 경우 대비)
+            except PlaywrightError as exc:
+                # 접속 자체가 실패한 경우만 사용자 URL 문제로 보고, 이후 본문 대기 실패는 그대로 전파
+                raise InaccessibleURLError(str(exc)) from exc
             # DOM 준비 직후 페이지가 다시 이동하면 실행 컨텍스트가 사라질 수 있다.
             for attempt in range(3):
                 try:

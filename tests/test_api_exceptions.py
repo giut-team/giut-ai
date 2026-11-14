@@ -40,3 +40,32 @@ def test_common_error_response():
     assert set(not_found.json()) == {"detail"}
     assert unexpected.status_code == 500
     assert unexpected.json() == {"detail": "서버 내부 오류가 발생했습니다."}
+
+
+def test_value_error_returns_422_with_message():
+    app = FastAPI()
+    register_exception_handlers(app)
+
+    @app.get("/plain")
+    def plain():
+        raise ValueError("X-AI-API-Key must be provided")
+
+    @app.get("/empty")
+    def empty():
+        raise ValueError()
+
+    @app.get("/pydantic")
+    def pydantic_error():
+        RequestBody.model_validate({"count": "invalid"})
+
+    with TestClient(app, raise_server_exceptions=False) as client:
+        plain_response = client.get("/plain")
+        empty_response = client.get("/empty")
+        pydantic_response = client.get("/pydantic")
+
+    assert plain_response.status_code == 422
+    assert plain_response.json() == {"detail": "X-AI-API-Key must be provided"}
+    assert empty_response.status_code == 422
+    assert empty_response.json() == {"detail": "잘못된 값입니다."}
+    assert pydantic_response.status_code == 422
+    assert pydantic_response.json()["detail"].startswith("count: ")
