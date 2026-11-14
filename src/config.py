@@ -14,6 +14,9 @@ class Settings:
     BACKEND_REQUEST_LOG_DIR = os.getenv(
         "BACKEND_REQUEST_LOG_DIR", str(BASE_DIR / "tmp" / "logs")
     )
+    API_REQUEST_LOG_DIR = os.getenv(
+        "API_REQUEST_LOG_DIR", str(BASE_DIR / "tmp" / "logs")
+    )
     X_AI_API_KEY = os.getenv("X_AI_API_KEY")
     COMPETITIONS_API_URL = os.getenv("COMPETITIONS_API_URL")
     TIMEZONE = ZoneInfo("Asia/Seoul")

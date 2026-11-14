@@ -12,8 +12,10 @@ from src.llm.dto import CategoryEnum
 from src.config import settings
 from src.services.constants import UrlType
 from src.services.extraction import (
+    InvalidContestError,
+    check_valid_activity_after_text,
+    check_valid_activity_after_image,
     filter_official_url,
-    is_eligible_activity,
 )
 from src.llm.field_extractor import extract_fields_from_text, extract_fields_from_images
 from src.llm.prompts import FIELDS_DESCRIPTION
@@ -95,6 +97,7 @@ async def extract_uos_page(page: dict) -> dict:
         page_text, page["source_url"], keys
     )
     extracted_fields["title"] = page["title"]
+    extracted_fields["images"] = page["images"]
     extracted_fields["urls"] = [
         {"type": UrlType.SOURCE_ORIGINAL, "url": page["source_url"]},
         {
@@ -105,9 +108,7 @@ async def extract_uos_page(page: dict) -> dict:
         },
     ]
 
-    if not is_eligible_activity(extracted_fields):
-        extracted_fields["is_eligible"] = False
-        return extracted_fields
+    check_valid_activity_after_text(extracted_fields)
 
     missing_keys = [key for key, value in extracted_fields.items() if value is None]
     if missing_keys:
@@ -117,19 +118,13 @@ async def extract_uos_page(page: dict) -> dict:
         for key, value in image_extracted_fields.items():
             if value is not None:
                 extracted_fields[key] = value
-    extracted_fields["images"] = page["images"]
+
+    check_valid_activity_after_image(extracted_fields)
 
     if not extracted_fields["category"]:
         # 카테고리 분류에 실패했을 경우 '기타'로 분류
         extracted_fields["category"] = [CategoryEnum.ETC]
 
-    extracted_fields["is_eligible"] = is_eligible_activity(extracted_fields)
-    if (
-        extracted_fields["application_end_at"] is None
-        or not extracted_fields["is_team"]
-    ):
-        extracted_fields["is_eligible"] = False
-        logger.info(f"[필터링됨] {extracted_fields}")
     return extracted_fields
 
 
@@ -146,6 +141,12 @@ async def collect_uos() -> list[dict]:
         async with semaphore:
             try:
                 return await extract_uos_page(page)
+            except InvalidContestError as exc:
+                # 등록 기준에 맞지 않는 활동은 정상 필터링이므로 traceback 없이 기록
+                logger.info(
+                    "시립대 공지 필터링됨: %s (%s)", page.get("source_url"), str(exc)
+                )
+                return None
             except Exception:
                 # 한 페이지 실패가 전체 수집을 중단시키지 않도록 로그만 남기고 제외
                 logger.exception("시립대 공지 추출 실패: %s", page.get("source_url"))
@@ -234,9 +235,7 @@ async def extract_contest_korea_page(page: dict) -> dict:
     for key, value in extracted_missing_fields.items():
         extracted_fields[key] = value
 
-    if not is_eligible_activity(extracted_fields):
-        extracted_fields["is_eligible"] = False
-        return extracted_fields
+    check_valid_activity_after_text(extracted_fields)
 
     missing_keys = [key for key, value in extracted_fields.items() if value is None]
     if missing_keys:
@@ -249,17 +248,12 @@ async def extract_contest_korea_page(page: dict) -> dict:
             if value is not None:
                 extracted_fields[key] = value
 
+    check_valid_activity_after_image(extracted_fields)
+
     if not extracted_fields["category"]:
         # 카테고리 분류에 실패했을 경우 '기타'로 분류
         extracted_fields["category"] = [CategoryEnum.ETC]
 
-    extracted_fields["is_eligible"] = is_eligible_activity(extracted_fields)
-    if (
-        extracted_fields["application_end_at"] is None
-        or not extracted_fields["is_team"]
-    ):
-        extracted_fields["is_eligible"] = False
-        logger.info(f"[필터링됨] {extracted_fields}")
     return extracted_fields
 
 
@@ -288,6 +282,12 @@ async def collect_contest_korea() -> list[dict]:
         async with semaphore:
             try:
                 return await extract_contest_korea_page(page)
+            except InvalidContestError as exc:
+                # 등록 기준에 맞지 않는 활동은 정상 필터링이므로 traceback 없이 기록
+                logger.info(
+                    "콘테스트코리아 필터링됨: %s (%s)", page.get("source_url"), str(exc)
+                )
+                return None
             except Exception:
                 # 한 페이지 실패가 전체 수집을 중단시키지 않도록 로그만 남기고 제외
                 logger.exception("콘테스트코리아 추출 실패: %s", page.get("source_url"))

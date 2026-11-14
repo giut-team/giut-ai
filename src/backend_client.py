@@ -1,53 +1,18 @@
 from datetime import datetime
-import json
 import logging
-from pathlib import Path
-from threading import Lock
 from typing import Any, Mapping
 
 import requests
 from pydantic import TypeAdapter
 
 from src.api.dto import CompetitionExtractResponse
-from src.config import BASE_DIR, settings
+from src.config import settings
+from src.utils.log_handler import write_backend_request_log
 
 COMPETITIONS_API_URL = settings.COMPETITIONS_API_URL
 logger = logging.getLogger(__name__)
 
 _competition_list_adapter = TypeAdapter(list[CompetitionExtractResponse])
-_request_log_lock = Lock()
-
-
-def _write_request_log(
-    payload: list[dict],
-    *,
-    sent_at: datetime,
-    response: requests.Response | None,
-    error: Exception | None,
-) -> None:
-    """백엔드로 보낸 요청 본문과 응답 결과를 JSONL 한 줄로 기록"""
-    try:
-        log_dir = Path(settings.BACKEND_REQUEST_LOG_DIR).expanduser()
-        if not log_dir.is_absolute():
-            log_dir = BASE_DIR / log_dir
-        log_dir.mkdir(parents=True, exist_ok=True)
-
-        record = {
-            "sent_at": sent_at.isoformat(timespec="seconds"),
-            "url": COMPETITIONS_API_URL,
-            "count": len(payload),
-            "status_code": response.status_code if response is not None else None,
-            "response_body": response.text if response is not None else None,
-            "error": repr(error) if error is not None else None,
-            "payload": payload,
-        }
-        line = json.dumps(record, ensure_ascii=False) + "\n"
-        with _request_log_lock:
-            with open(log_dir / "backend_requests.jsonl", "a", encoding="utf-8") as f:
-                f.write(line)
-    except Exception:
-        # 기록 실패가 전송 결과에 영향을 주지 않도록 로그만 남김
-        logger.exception("백엔드 요청 기록 실패")
 
 
 def post_competition(
@@ -79,7 +44,13 @@ def post_competition(
         error = exc
         raise
     finally:
-        _write_request_log(payload, sent_at=sent_at, response=response, error=error)
+        write_backend_request_log(
+            payload,
+            url=COMPETITIONS_API_URL,
+            sent_at=sent_at,
+            response=response,
+            error=error,
+        )
 
     if not response.ok:
         logger.error(
