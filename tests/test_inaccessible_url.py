@@ -9,6 +9,7 @@ import requests
 from src.api import router as router_module
 from src.api.exceptions import register_exception_handlers
 from src.parsers.html_parser import HtmlParser, InaccessibleURLError
+from src.services.extraction import InvalidContestError, check_valid_activity_after_text
 
 INVALID_URL_RESPONSE = {"detail": "잘못된 형식의 url입니다."}
 
@@ -157,6 +158,30 @@ def test_pipeline_inaccessible_url_returns_400(monkeypatch, client):
 
     assert response.status_code == 400
     assert response.json() == INVALID_URL_RESPONSE
+
+
+def test_invalid_contest_returns_400_with_message(monkeypatch, client):
+    async def fake_run_pipeline(url):
+        raise InvalidContestError("마감일이 지난 활동입니다.")
+
+    monkeypatch.setattr(router_module, "run_pipeline", fake_run_pipeline)
+
+    response = post_extract(client, "https://example.com")
+
+    assert response.status_code == 400
+    assert response.json() == {"detail": "마감일이 지난 활동입니다."}
+
+
+def test_invalid_contest_from_validation_function_returns_400(monkeypatch, client):
+    async def fake_run_pipeline(url):
+        check_valid_activity_after_text({"is_team": False})
+
+    monkeypatch.setattr(router_module, "run_pipeline", fake_run_pipeline)
+
+    response = post_extract(client, "https://example.com")
+
+    assert response.status_code == 400
+    assert response.json() == {"detail": "팀으로 참가할 수 없는 활동입니다."}
 
 
 def test_internal_error_after_fetch_stays_500(monkeypatch, client):

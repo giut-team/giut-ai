@@ -3,6 +3,7 @@ from datetime import datetime
 import json
 import logging
 from threading import Barrier
+from types import SimpleNamespace
 
 from openai.types import CompletionUsage
 import pytest
@@ -137,7 +138,6 @@ def test_concurrent_calls_share_one_handler_without_missing_or_duplicate_lines(u
         {"started_at": datetime(2026, 11, 8)},
         {"ended_at": datetime(2026, 11, 8)},
         {"request_type": "other"},
-        {"ended_at": datetime.fromisoformat("2026-11-07T14:59:59+00:00")},
     ],
 )
 def test_invalid_usage_log_is_rejected_before_creating_a_file(usage_log, overrides):
@@ -145,3 +145,51 @@ def test_invalid_usage_log_is_rejected_before_creating_a_file(usage_log, overrid
     with pytest.raises(ValueError):
         write_log(None, **{**arguments, **overrides})
     assert not log_dir.exists()
+
+
+def test_clock_going_backwards_is_recorded_as_zero_elapsed(usage_log):
+    write_log, arguments, log_dir, _ = usage_log
+    write_log(
+        None,
+        **{**arguments, "ended_at": datetime.fromisoformat("2026-11-07T14:59:59+00:00")},
+    )
+    record = json.loads((log_dir / "gpt_usage.jsonl").read_text(encoding="utf-8"))
+    assert record["elapsed_ms"] == 0
+
+
+def test_log_file_failure_does_not_raise(monkeypatch, usage_log):
+    from src.utils import log_handler
+
+    write_log, arguments, _, _ = usage_log
+
+    def broken_ensure(*args, **kwargs):
+        raise PermissionError("cannot create log dir")
+
+    monkeypatch.setattr(log_handler, "_ensure_file_handler", broken_ensure)
+
+    write_log(None, **arguments)  # 예외가 밖으로 나오지 않아야 함
+
+
+def test_text_extraction_keeps_result_when_usage_log_fails(monkeypatch, usage_log):
+    from src.llm import field_extractor
+    from src.utils import log_handler
+
+    def broken_ensure(*args, **kwargs):
+        raise PermissionError("cannot create log dir")
+
+    parsed = SimpleNamespace(to_dict=lambda: {"title": "공모전"})
+    response = SimpleNamespace(
+        usage=None, choices=[SimpleNamespace(message=SimpleNamespace(parsed=parsed))]
+    )
+
+    async def fake_completion(*args, **kwargs):
+        return response
+
+    monkeypatch.setattr(log_handler, "_ensure_file_handler", broken_ensure)
+    monkeypatch.setattr(field_extractor, "create_json_completion", fake_completion)
+
+    result = asyncio.run(
+        field_extractor.extract_fields_from_text("본문", "https://example.com", ["title"])
+    )
+
+    assert result == {"title": "공모전"}

@@ -10,6 +10,7 @@ from threading import Lock
 from typing import Any, Literal
 
 from openai.types import CompletionUsage
+from pydantic import BaseModel
 import requests
 
 from src.config import BASE_DIR, settings
@@ -20,6 +21,8 @@ _usage_logger = logging.getLogger(f"{__name__}.gpt_usage")
 _usage_logger_lock = Lock()
 _request_logger = logging.getLogger(f"{__name__}.backend_requests")
 _request_logger_lock = Lock()
+_api_logger = logging.getLogger(f"{__name__}.api_requests")
+_api_logger_lock = Lock()
 
 
 class DailyRotatingFileHandler(BaseRotatingHandler):
@@ -116,7 +119,11 @@ def write_gpt_usage_log(
     status: Literal["success", "error"] = "success",
     error_type: str | None = None,
 ) -> None:
-    """시작·종료 시각으로 elapsed_ms를 계산하고 GPT 호출 한 건을 JSONL로 기록"""
+    """시작·종료 시각으로 elapsed_ms를 계산하고 GPT 호출 한 건을 JSONL로 기록
+
+    잘못된 인자는 ValueError로 알리지만, 파일 기록 실패는 GPT 호출 결과에 영향을 주지 않도록
+    로그만 남기고 삼킴
+    """
     if started_at.utcoffset() is None or ended_at.utcoffset() is None:
         raise ValueError("started_at, ended_at에 시간대가 필요합니다.")
     if request_type not in {"text", "image"}:
@@ -126,7 +133,11 @@ def write_gpt_usage_log(
     ended_at = ended_at.astimezone(settings.TIMEZONE)
     elapsed_ms = (ended_at - started_at).total_seconds() * 1000
     if elapsed_ms < 0:
-        raise ValueError("ended_at은 started_at보다 빠를 수 없습니다.")
+        # datetime.now()는 벽시계라 NTP 보정 등으로 뒤로 갈 수 있으므로 0으로 기록
+        logger.warning(
+            "GPT 호출 종료 시각이 시작 시각보다 빠름: %s < %s", ended_at, started_at
+        )
+        elapsed_ms = 0.0
 
     prompt_details = usage.prompt_tokens_details if usage else None
     completion_details = usage.completion_tokens_details if usage else None
@@ -148,12 +159,18 @@ def write_gpt_usage_log(
             completion_details.reasoning_tokens if completion_details else None
         ),
     }
-    message = json.dumps(record, ensure_ascii=False, allow_nan=False)
-
-    _ensure_file_handler(
-        _usage_logger, _usage_logger_lock, settings.GPT_USAGE_LOG_DIR, "gpt_usage.jsonl"
-    )
-    _usage_logger.info(message)
+    try:
+        message = json.dumps(record, ensure_ascii=False, allow_nan=False)
+        _ensure_file_handler(
+            _usage_logger,
+            _usage_logger_lock,
+            settings.GPT_USAGE_LOG_DIR,
+            "gpt_usage.jsonl",
+        )
+        _usage_logger.info(message)
+    except Exception:
+        # 기록 실패가 GPT 추출 결과에 영향을 주지 않도록 로그만 남김
+        logger.exception("GPT 사용량 기록 실패")
 
 
 def _response_body_for_log(response: requests.Response | None) -> Any:
@@ -199,3 +216,62 @@ def write_backend_request_log(
     except Exception:
         # 기록 실패가 전송 결과에 영향을 주지 않도록 로그만 남김
         logger.exception("백엔드 요청 기록 실패")
+
+
+def _body_for_log(body: Any) -> Any:
+    """요청·응답 본문을 JSON으로 기록할 수 있는 형태로 변환
+
+    pydantic 모델은 dict로, bytes는 JSON이면 파싱하고 아니면 문자열로 변환
+    """
+    if isinstance(body, BaseModel):
+        return body.model_dump(mode="json")
+    if isinstance(body, (bytes, bytearray)):
+        text = body.decode("utf-8", errors="replace")
+        try:
+            return json.loads(text)
+        except ValueError:
+            return text
+    return body
+
+
+def write_api_request_log(
+    *,
+    method: str,
+    path: str,
+    request_body: Any,
+    received_at: datetime,
+    responded_at: datetime,
+    status_code: int | None,
+    response_body: Any,
+    error: Exception | None = None,
+) -> None:
+    """API로 받은 요청과 응답 결과를 JSONL 한 줄로 기록"""
+    try:
+        received_at = received_at.astimezone(settings.TIMEZONE)
+        responded_at = responded_at.astimezone(settings.TIMEZONE)
+        record = {
+            "received_at": received_at.isoformat(timespec="milliseconds"),
+            "responded_at": responded_at.isoformat(timespec="milliseconds"),
+            "elapsed_ms": round(
+                (responded_at - received_at).total_seconds() * 1000, 3
+            ),
+            "method": method,
+            "path": path,
+            "status_code": status_code,
+            "error": repr(error) if error is not None else None,
+            "request_body": _body_for_log(request_body),
+            "response_body": _body_for_log(response_body),
+        }
+        # 응답에 date·Enum 등이 섞여 있어도 기록이 실패하지 않도록 문자열로 변환
+        message = json.dumps(record, ensure_ascii=False, default=str)
+
+        _ensure_file_handler(
+            _api_logger,
+            _api_logger_lock,
+            settings.API_REQUEST_LOG_DIR,
+            "api_requests.jsonl",
+        )
+        _api_logger.info(message)
+    except Exception:
+        # 기록 실패가 API 응답에 영향을 주지 않도록 로그만 남김
+        logger.exception("API 요청 기록 실패")

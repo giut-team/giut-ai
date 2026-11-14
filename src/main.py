@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 from fastapi import FastAPI
 
 from src.api.exceptions import register_exception_handlers
+from src.api.middleware import ApiRequestLogMiddleware
 from src.api.router import router
 from src.collector_job import run_daily_collector
 from src.services.extraction import get_models
@@ -39,5 +40,6 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
+app.add_middleware(ApiRequestLogMiddleware)
 register_exception_handlers(app)
 app.include_router(router)
