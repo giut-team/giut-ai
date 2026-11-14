@@ -5,14 +5,20 @@ from types import SimpleNamespace
 from urllib.parse import parse_qs, urlencode, urlparse
 
 import pytest
+import requests
 
+from src.config import settings
 from src.services import collector
 from src import collector_job
 from src import backend_client
 
 
-def test_collect_and_post_uos_sends_results_in_one_request(monkeypatch):
-    payloads = [{"title": "first"}, {"title": "second"}]
+def test_collect_and_post_sends_only_eligible_results_in_one_request(monkeypatch):
+    uos_results = [
+        {"title": "first", "is_eligible": True},
+        {"title": "filtered", "is_eligible": False},
+    ]
+    contest_korea_results = [{"title": "second", "is_eligible": True}]
     sent = []
     started = []
     both_started = asyncio.Event()
@@ -22,25 +28,27 @@ def test_collect_and_post_uos_sends_results_in_one_request(monkeypatch):
         if len(started) == 2:
             both_started.set()
         await both_started.wait()
-        return payloads
+        return uos_results
 
     async def fake_collect_contest_korea():
         started.append("contest_korea")
         if len(started) == 2:
             both_started.set()
         await both_started.wait()
-        return []
+        return contest_korea_results
 
-    def fake_post_competition(payload, bearer_token):
-        sent.append((payload, bearer_token))
+    def fake_post_competition(payload, x_ai_api_key):
+        sent.append((payload, x_ai_api_key))
 
-    monkeypatch.setattr(collector, "collect_uos", fake_collect_uos)
-    monkeypatch.setattr(collector, "collect_contest_korea", fake_collect_contest_korea)
-    monkeypatch.setattr(collector, "post_competition", fake_post_competition)
+    monkeypatch.setattr(collector_job, "collect_uos", fake_collect_uos)
+    monkeypatch.setattr(
+        collector_job, "collect_contest_korea", fake_collect_contest_korea
+    )
+    monkeypatch.setattr(collector_job, "post_competition", fake_post_competition)
 
-    asyncio.run(asyncio.wait_for(collector.collect_and_post("test-token"), 3))
+    asyncio.run(asyncio.wait_for(collector_job.collect_and_post("test-key"), 3))
 
-    assert sent == [(payloads, "test-token")]
+    assert sent == [([uos_results[0], contest_korea_results[0]], "test-key")]
 
 
 def test_collect_uos_fetches_feeds_and_extracts_pages_concurrently(monkeypatch):
@@ -87,39 +95,53 @@ def test_collect_uos_fetches_feeds_and_extracts_pages_concurrently(monkeypatch):
             },
         ]
 
-    async def fake_extract_fields_from_text(text, keys=[]):
-        print("keys:", keys)
-
-        extraction_started.append(text)
+    async def fake_extract_uos_page(page):
+        extraction_started.append(page["title"])
         if len(extraction_started) == 2:
             both_started.set()
         await both_started.wait()
-        return (
-            SimpleNamespace(
-                to_dict=lambda: {
-                    "title": text,
-                    "target_participants": "대학생만 가능",
-                    "activity_kind": "공모전",
-                    "is_team": True,
-                }
-            ),
-            None,
-        )
+        return {"title": page["title"], "is_eligible": True}
 
     monkeypatch.setattr(collector, "datetime", FakeDateTime)
     monkeypatch.setattr(collector, "parse_uos_rss", fake_parse_uos_rss)
-    monkeypatch.setattr(
-        collector, "extract_fields_from_text", fake_extract_fields_from_text
-    )
+    monkeypatch.setattr(collector, "extract_uos_page", fake_extract_uos_page)
 
     results = asyncio.run(asyncio.wait_for(collector.collect_uos(), 5))
 
-    assert [result["title"] for result in results] == [
-        "general\nbody",
-        "haksa\nbody",
-    ]
-    assert all(result["is_team"] for result in results)
-    assert extraction_started == ["general\nbody", "haksa\nbody"]
+    assert [result["title"] for result in results] == ["general", "haksa"]
+    assert extraction_started == ["general", "haksa"]
+
+
+def test_collect_uos_skips_pages_that_fail_extraction(monkeypatch):
+    class FakeDateTime(datetime):
+        @classmethod
+        def now(cls, tz=None):
+            return cls(2026, 10, 29, 12, 0, tzinfo=tz)
+
+    def fake_parse_uos_rss(url):
+        title = "general" if url == collector.UOS_RSS_GENERAL else "haksa"
+        return [
+            {
+                "title": title,
+                "body": "body",
+                "images": [],
+                "published_date": "Wed, 28 Oct 2026 09:00:00 +0900",
+                "source_url": f"https://www.uos.ac.kr/{title}",
+            }
+        ]
+
+    async def fake_extract_uos_page(page):
+        if page["title"] == "general":
+            raise RuntimeError("extraction failed")
+        return {"title": page["title"]}
+
+    monkeypatch.setattr(collector, "datetime", FakeDateTime)
+    monkeypatch.setattr(collector, "parse_uos_rss", fake_parse_uos_rss)
+    monkeypatch.setattr(collector, "extract_uos_page", fake_extract_uos_page)
+
+    results = asyncio.run(asyncio.wait_for(collector.collect_uos(), 5))
+
+    assert results == [{"title": "haksa"}]
 
 
 def test_collect_contest_korea_filters_yesterday_across_pages(monkeypatch):
@@ -243,13 +265,13 @@ def test_contest_korea_scans_only_first_30_entries(monkeypatch, int_gbn):
 
 
 def test_daily_collector_waits_until_seoul_midnight(monkeypatch):
-    current_time = datetime(2026, 10, 28, 23, 59, tzinfo=collector.SEOUL_TIMEZONE)
+    current_time = datetime(2026, 10, 28, 23, 59, tzinfo=settings.TIMEZONE)
     delays = []
 
     class FakeDateTime:
         @staticmethod
         def now(tz):
-            assert tz == collector.SEOUL_TIMEZONE
+            assert tz == settings.TIMEZONE
             return current_time
 
         combine = staticmethod(datetime.combine)
@@ -258,36 +280,86 @@ def test_daily_collector_waits_until_seoul_midnight(monkeypatch):
         delays.append(seconds)
         raise asyncio.CancelledError
 
-    monkeypatch.setattr(collector, "datetime", FakeDateTime)
-    monkeypatch.setattr(collector.asyncio, "sleep", fake_sleep)
+    monkeypatch.setattr(collector_job, "datetime", FakeDateTime)
+    monkeypatch.setattr(collector_job.asyncio, "sleep", fake_sleep)
 
     with pytest.raises(asyncio.CancelledError):
-        asyncio.run(collector_job.run_daily_collector("test-token"))
+        asyncio.run(collector_job.run_daily_collector("test-key"))
 
     assert delays == [60]
 
 
-def test_post_competition_sends_list_as_json(monkeypatch):
-    payloads = [{"title": "first"}, {"title": "second"}]
-    requests_sent = []
+def test_daily_collector_rejects_blank_api_key():
+    with pytest.raises(ValueError):
+        asyncio.run(collector_job.run_daily_collector("  "))
 
-    class FakeResponse:
-        def raise_for_status(self):
-            pass
+
+class FakeBackendResponse:
+    ok = True
+    status_code = 201
+    text = "{}"
+
+    def json(self):
+        return {}
+
+    def raise_for_status(self):
+        pass
+
+
+def test_post_competition_sends_camel_case_list_and_logs_request(monkeypatch):
+    payloads = [{"title": "first"}, {"title": "second", "is_team": True}]
+    requests_sent = []
+    logged = []
 
     def fake_post(url, *, json, headers, timeout):
         requests_sent.append((url, json, headers, timeout))
-        return FakeResponse()
+        return FakeBackendResponse()
 
     monkeypatch.setattr(backend_client.requests, "post", fake_post)
+    monkeypatch.setattr(
+        backend_client,
+        "write_backend_request_log",
+        lambda payload, **kwargs: logged.append((payload, kwargs)),
+    )
 
-    backend_client.post_competition(payloads, "test-token")
+    backend_client.post_competition(payloads, " test-key ")
 
-    assert requests_sent == [
-        (
-            backend_client.COMPETITIONS_URL,
-            payloads,
-            {"Authorization": "Bearer test-token"},
-            10.0,
-        )
-    ]
+    [(url, sent_json, headers, timeout)] = requests_sent
+    assert url == backend_client.COMPETITIONS_API_URL
+    assert [item["title"] for item in sent_json] == ["first", "second"]
+    assert sent_json[1]["isTeam"] is True
+    assert "hostOrganization" in sent_json[0]
+    assert headers == {"X-AI-API-Key": "test-key"}
+    assert timeout == 10.0
+
+    [(logged_payload, logged_kwargs)] = logged
+    assert logged_payload == sent_json
+    assert logged_kwargs["url"] == backend_client.COMPETITIONS_API_URL
+    assert isinstance(logged_kwargs["response"], FakeBackendResponse)
+    assert logged_kwargs["error"] is None
+
+
+def test_post_competition_logs_request_error_and_reraises(monkeypatch):
+    logged = []
+
+    def fake_post(url, *, json, headers, timeout):
+        raise requests.ConnectionError("backend down")
+
+    monkeypatch.setattr(backend_client.requests, "post", fake_post)
+    monkeypatch.setattr(
+        backend_client,
+        "write_backend_request_log",
+        lambda payload, **kwargs: logged.append(kwargs),
+    )
+
+    with pytest.raises(requests.ConnectionError):
+        backend_client.post_competition([{"title": "first"}], "test-key")
+
+    [logged_kwargs] = logged
+    assert logged_kwargs["response"] is None
+    assert isinstance(logged_kwargs["error"], requests.ConnectionError)
+
+
+def test_post_competition_rejects_blank_api_key():
+    with pytest.raises(ValueError):
+        backend_client.post_competition([], " ")
