@@ -19,8 +19,17 @@ def request_log(monkeypatch, tmp_path):
     monkeypatch.setattr(log_handler.settings, "BACKEND_REQUEST_LOG_DIR", str(log_dir))
 
     def read_records():
-        path = log_dir / "backend_requests.json"
-        return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
+        # 들여쓰기한 JSON 객체가 연속으로 기록되므로 객체 단위로 차례대로 파싱
+        text = (log_dir / "backend_requests.json").read_text(encoding="utf-8")
+        decoder = json.JSONDecoder()
+        records, index = [], 0
+        while index < len(text):
+            if text[index].isspace():
+                index += 1
+                continue
+            record, index = decoder.raw_decode(text, index)
+            records.append(record)
+        return records
 
     try:
         yield read_records
@@ -76,6 +85,15 @@ def test_request_log_keeps_raw_text_for_non_201_or_invalid_json(
     [record] = request_log()
     assert record["status_code"] == status_code
     assert record["response_body"] == text
+
+
+def test_request_log_writes_indented_objects_one_after_another(request_log):
+    write_request(FakeResponse(201, '{"saved": [1]}'))
+    write_request(FakeResponse(400, "bad"))
+
+    first, second = request_log()
+    assert first["status_code"] == 201
+    assert second["status_code"] == 400
 
 
 def test_request_log_records_error_without_response(request_log):

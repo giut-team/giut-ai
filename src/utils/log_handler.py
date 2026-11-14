@@ -193,7 +193,10 @@ def write_backend_request_log(
     response: requests.Response | None,
     error: Exception | None,
 ) -> None:
-    """백엔드로 보낸 요청 본문과 응답 결과를 JSON 파일로 기록"""
+    """백엔드로 보낸 요청 본문과 응답 결과를 들여쓰기한 JSON 객체로 이어서 기록
+
+    한 줄 제약이 없어 사람이 읽기 쉬우며, 파일은 JSON 객체가 연속된 형태 (jq로 바로 읽힘)
+    """
     try:
         record = {
             "sent_at": sent_at.isoformat(timespec="seconds"),
@@ -204,7 +207,7 @@ def write_backend_request_log(
             "error": repr(error) if error is not None else None,
             "payload": payload,
         }
-        message = json.dumps(record, ensure_ascii=False)
+        message = json.dumps(record, ensure_ascii=False, indent=2)
 
         _ensure_file_handler(
             _request_logger,
