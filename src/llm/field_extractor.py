@@ -8,14 +8,15 @@ from urllib.parse import urlparse
 from openai import BadRequestError
 import requests
 
+from src.config import settings
 from src.llm.openai_client import create_json_completion
 from src.llm.dto import ExtractedFields
 from src.llm.prompts import (
     FIELDS_DESCRIPTION,
-    CONTEST_LLM_PROMPT,
-    CONTEST_VLM_PROMPT,
-    UOS_LLM_PROMPT,
-    UOS_VLM_PROMPT,
+    CONTEST_TEXT_PROMPT,
+    CONTEST_IMAGE_PROMPT,
+    UOS_TEXT_PROMPT,
+    UOS_IMAGE_PROMPT,
 )
 from src.utils.image import to_base64_data_url
 from src.utils.log_handler import write_gpt_usage_log
@@ -37,9 +38,11 @@ async def extract_fields_from_text(
     hostname = urlparse(source_url).hostname or ""
     if hostname == "uos.ac.kr" or hostname.endswith(".uos.ac.kr"):
         # 시립대(uos.ac.kr) 공지는 전용 프롬프트 사용
-        prompt = UOS_LLM_PROMPT
+        prompt = UOS_TEXT_PROMPT
+        prompt_cache_key = settings.UOS_TEXT_CACHE_KEY
     else:
-        prompt = CONTEST_LLM_PROMPT
+        prompt = CONTEST_TEXT_PROMPT
+        prompt_cache_key = settings.TEXT_CACHE_KEY
 
     # 추출할 키 및 관련 설명만 기본 프롬프트에 추가
     descriptions = [FIELDS_DESCRIPTION[key] for key in keys]
@@ -56,6 +59,7 @@ async def extract_fields_from_text(
                 {"role": "user", "content": [{"type": "text", "text": page_text}]},
             ],
             response_format=ExtractedFields.select_fields(keys),
+            prompt_cache_key=prompt_cache_key,
         )
         ended_at = datetime.now(timezone.utc)
 
@@ -91,9 +95,11 @@ async def extract_fields_from_images(
     hostname = urlparse(source_url).hostname or ""
     if hostname == "uos.ac.kr" or hostname.endswith(".uos.ac.kr"):
         # 시립대(uos.ac.kr) 공지는 전용 프롬프트 사용
-        prompt = UOS_VLM_PROMPT
+        prompt = UOS_IMAGE_PROMPT
+        prompt_cache_key = settings.UOS_IMAGE_CACHE_KEY
     else:
-        prompt = CONTEST_VLM_PROMPT
+        prompt = CONTEST_IMAGE_PROMPT
+        prompt_cache_key = settings.IMAGE_CACHE_KEY
 
     # 추출할 키 및 관련 설명만 기본 프롬프트에 추가
     descriptions = [FIELDS_DESCRIPTION[key] for key in keys]
@@ -101,7 +107,7 @@ async def extract_fields_from_images(
     try:
         response_format = ExtractedFields.select_fields(keys)
         return await _request_image_fields(
-            prompt, image_urls, source_url, response_format
+            prompt, image_urls, source_url, response_format, prompt_cache_key
         )
     except BadRequestError as exc:
         if not _is_image_fetch_error(exc):
@@ -146,6 +152,7 @@ async def _request_image_fields(
     image_urls: list[str],
     source_url: str,
     response_format: type,
+    prompt_cache_key: str,
 ) -> dict:
     """이미지 필드 추출 요청 1회 수행 및 사용량 기록 (실패 시 기록 후 예외 전파)"""
     started_at = datetime.now(timezone.utc)
@@ -165,6 +172,7 @@ async def _request_image_fields(
                 },
             ],
             response_format=response_format,
+            prompt_cache_key=prompt_cache_key,
         )
     except Exception as exc:
         write_gpt_usage_log(
