@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from datetime import date, datetime, timedelta
+from datetime import datetime
 from email.utils import parsedate_to_datetime
 import re
 from urllib.parse import parse_qs, urljoin, urlparse
@@ -31,7 +31,7 @@ CONTEST_KOREA_CONTEST_LIST = (
 CONTEST_KOREA_ACTIVITY_LIST = (
     "https://www.contestkorea.com/sub/list.php?int_gbn=2"  # 대외활동
 )
-CONTEST_KOREA_SCAN_LIMIT = 30  # 각 목록 앞 30개에서 전일 게시물만 선택
+CONTEST_KOREA_SCAN_LIMIT = 30  # 각 목록 앞 30개에서 새 게시물만 선택
 CONTEST_KOREA_FILTERS = {  # 공모전 검색 조건
     "Txt_sortkey": "a.int_sort",
     "Txt_sortword": "desc",
@@ -43,12 +43,18 @@ CONTEST_KOREA_FILTERS = {  # 공모전 검색 조건
     "Txt_area[2]": "31",  # 서울
 }
 
+CONTEST_KOREA_LISTS = {
+    "contest": CONTEST_KOREA_CONTEST_LIST,
+    "activity": CONTEST_KOREA_ACTIVITY_LIST,
+}
+
 PAGE_EXTRACTION_CONCURRENCY = 5
 
 logger = logging.getLogger(__name__)
 
 
-def _published_on_date(page: dict, target_date: date) -> bool:
+def _published_in_range(page: dict, start: datetime, end: datetime) -> bool:
+    """게시 시각이 [start, end) 범위에 속하는지 확인"""
     published_date = page.get("published_date", "")
     try:
         try:
@@ -61,7 +67,7 @@ def _published_on_date(page: dict, target_date: date) -> bool:
 
     if published_at.tzinfo is None:
         published_at = published_at.replace(tzinfo=settings.TIMEZONE)
-    return published_at.astimezone(settings.TIMEZONE).date() == target_date
+    return start <= published_at < end
 
 
 def _uos_link_context_blocks(full_text: str) -> list[dict]:
@@ -128,9 +134,8 @@ async def extract_uos_page(page: dict) -> dict:
     return extracted_fields
 
 
-async def collect_uos() -> list[dict]:
-    # 자정 기준으로 전일 게시된 공지만 수집
-    yesterday = datetime.now(settings.TIMEZONE).date() - timedelta(days=1)
+async def collect_uos(start: datetime, end: datetime) -> list[dict]:
+    """[start, end) 사이에 게시된 공지만 수집"""
     general, haksa = await asyncio.gather(
         asyncio.to_thread(parse_uos_rss, UOS_RSS_GENERAL),
         asyncio.to_thread(parse_uos_rss, UOS_RSS_HAKSA),
@@ -156,13 +161,20 @@ async def collect_uos() -> list[dict]:
         *(
             extract_limited(page)
             for page in general + haksa
-            if _published_on_date(page, yesterday)
+            if _published_in_range(page, start, end)
         )
     )
     return [result for result in results if result is not None]
 
 
-async def _contest_korea_detail_urls(list_url: str, yesterday: date) -> list[str]:
+def contest_korea_str_no(url: str) -> int | None:
+    """상세 URL의 str_no(YYYYMMDD + 일련번호)를 정수로 반환"""
+    str_no = parse_qs(urlparse(url).query).get("str_no", [""])[0]
+    return int(str_no) if str_no.isdigit() else None
+
+
+async def _contest_korea_detail_urls(list_url: str, last_str_no: int) -> list[str]:
+    """목록에서 str_no가 last_str_no보다 큰 게시물의 상세 URL 반환"""
     page_url = list_url.split("?", maxsplit=1)[0]
     int_gbn = parse_qs(urlparse(list_url).query)["int_gbn"][0]
     first_page = True
@@ -192,16 +204,12 @@ async def _contest_korea_detail_urls(list_url: str, yesterday: date) -> list[str
         scanned_entries += len(candidates)
         for entry in candidates:
             url = urljoin(response.url, entry["href"])
-            str_no = parse_qs(urlparse(url).query).get("str_no", [""])[0]
-            try:
-                posted_date = datetime.strptime(str_no[:8], "%Y%m%d").date()
-            except ValueError:
-                logger.warning(
-                    "콘테스트코리아 게시물 번호에서 날짜를 읽을 수 없음: %s", url
-                )
+            str_no = contest_korea_str_no(url)
+            if str_no is None:
+                logger.warning("콘테스트코리아 게시물 번호를 읽을 수 없음: %s", url)
                 continue
 
-            if posted_date == yesterday and url not in seen_urls:
+            if str_no > last_str_no and url not in seen_urls:
                 seen_urls.add(url)
                 detail_urls.append(url)
 
@@ -257,14 +265,27 @@ async def extract_contest_korea_page(page: dict) -> dict:
     return extracted_fields
 
 
-async def collect_contest_korea() -> list[dict]:
-    # 자정 기준으로 전일 게시된 공지만 수집
-    yesterday = (datetime.now(settings.TIMEZONE) - timedelta(days=1)).date()
-    competition_urls, activity_urls = await asyncio.gather(
-        _contest_korea_detail_urls(CONTEST_KOREA_CONTEST_LIST, yesterday),
-        _contest_korea_detail_urls(CONTEST_KOREA_ACTIVITY_LIST, yesterday),
+async def collect_contest_korea(
+    last_str_nos: dict[str, int],
+) -> tuple[list[dict], dict[str, int]]:
+    """목록별로 마지막으로 수집한 str_no보다 큰 게시물만 수집
+
+    반환값: (추출 결과, 목록별 갱신된 마지막 str_no)
+    """
+    names = list(CONTEST_KOREA_LISTS)
+    url_lists = await asyncio.gather(
+        *(
+            _contest_korea_detail_urls(CONTEST_KOREA_LISTS[name], last_str_nos[name])
+            for name in names
+        )
     )
-    detail_urls = list(dict.fromkeys(competition_urls + activity_urls))
+    new_last_str_nos = {
+        name: max(
+            [last_str_nos[name], *(contest_korea_str_no(url) for url in urls)]
+        )
+        for name, urls in zip(names, url_lists)
+    }
+    detail_urls = list(dict.fromkeys(url for urls in url_lists for url in urls))
 
     results = []
     for url in detail_urls:
@@ -294,4 +315,4 @@ async def collect_contest_korea() -> list[dict]:
                 return None
 
     extracted = await asyncio.gather(*(extract_limited(page) for page in results))
-    return [result for result in extracted if result is not None]
+    return [result for result in extracted if result is not None], new_last_str_nos
