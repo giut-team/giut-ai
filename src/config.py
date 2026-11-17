@@ -20,7 +20,7 @@ class Settings:
         "GPT_USAGE_LOG_DIR", str(BASE_DIR / "tmp" / "logs" / "gpt_usage")
     )
     BACKEND_REQUEST_LOG_DIR = os.getenv(
-        "BACKEND_REQUEST_LOG_DIR", str(BASE_DIR / "tmp" / "logs")
+        "BACKEND_REQUEST_LOG_DIR", str(BASE_DIR / "tmp" / "logs" / "backend_requests")
     )
     API_REQUEST_LOG_DIR = os.getenv(
         "API_REQUEST_LOG_DIR", str(BASE_DIR / "tmp" / "logs" / "api_requests")

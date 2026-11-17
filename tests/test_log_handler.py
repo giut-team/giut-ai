@@ -12,31 +12,19 @@ SEOUL = ZoneInfo("Asia/Seoul")
 
 
 @pytest.fixture
-def request_log(monkeypatch, tmp_path):
+def request_log_dir(monkeypatch, tmp_path):
     log_dir = tmp_path / "logs"
-    test_logger = logging.Logger("test.backend_requests")
-    monkeypatch.setattr(log_handler, "_request_logger", test_logger)
     monkeypatch.setattr(log_handler.settings, "BACKEND_REQUEST_LOG_DIR", str(log_dir))
+    return log_dir
 
-    def read_records():
-        # 들여쓰기한 JSON 객체가 연속으로 기록되므로 객체 단위로 차례대로 파싱
-        text = (log_dir / "backend_requests.json").read_text(encoding="utf-8")
-        decoder = json.JSONDecoder()
-        records, index = [], 0
-        while index < len(text):
-            if text[index].isspace():
-                index += 1
-                continue
-            record, index = decoder.raw_decode(text, index)
-            records.append(record)
-        return records
 
-    try:
-        yield read_records
-    finally:
-        for handler in test_logger.handlers[:]:
-            test_logger.removeHandler(handler)
-            handler.close()
+@pytest.fixture
+def request_log(request_log_dir):
+    def read_records(day="2026-11-14"):
+        path = request_log_dir / f"backend_requests_{day}.json"
+        return json.loads(path.read_text(encoding="utf-8"))
+
+    return read_records
 
 
 class FakeResponse:
@@ -48,11 +36,13 @@ class FakeResponse:
         return json.loads(self.text)
 
 
-def write_request(response=None, error=None):
+def write_request(
+    response=None, error=None, sent_at=datetime(2026, 11, 14, 0, 0, 5, tzinfo=SEOUL)
+):
     log_handler.write_backend_request_log(
         [{"title": "first"}],
         url="https://backend.example.com/competitions",
-        sent_at=datetime(2026, 11, 14, 0, 0, 5, tzinfo=SEOUL),
+        sent_at=sent_at,
         response=response,
         error=error,
     )
@@ -87,13 +77,55 @@ def test_request_log_keeps_raw_text_for_non_201_or_invalid_json(
     assert record["response_body"] == text
 
 
-def test_request_log_writes_indented_objects_one_after_another(request_log):
+def test_request_log_appends_to_json_list_of_same_day(request_log):
     write_request(FakeResponse(201, '{"saved": [1]}'))
-    write_request(FakeResponse(400, "bad"))
+    write_request(
+        FakeResponse(400, "bad"), sent_at=datetime(2026, 11, 14, 12, 0, tzinfo=SEOUL)
+    )
 
     first, second = request_log()
     assert first["status_code"] == 201
     assert second["status_code"] == 400
+
+
+def test_request_log_splits_files_by_seoul_date(request_log):
+    # UTC 11/14 15:00 == 서울 11/15 00:00
+    write_request(FakeResponse(201, "{}"))
+    write_request(
+        FakeResponse(201, "{}"),
+        sent_at=datetime(2026, 11, 14, 15, 0, tzinfo=ZoneInfo("UTC")),
+    )
+
+    assert len(request_log("2026-11-14")) == 1
+    [record] = request_log("2026-11-15")
+    assert record["sent_at"] == "2026-11-15T00:00:00+09:00"
+
+
+def test_request_log_moves_broken_file_aside(request_log, request_log_dir):
+    request_log_dir.mkdir(parents=True)
+    broken = request_log_dir / "backend_requests_2026-11-14.json"
+    broken.write_text('{"not": "a list"', encoding="utf-8")
+
+    write_request(FakeResponse(201, "{}"))
+
+    assert len(request_log()) == 1
+    [moved] = request_log_dir.glob("backend_requests_2026-11-14.json.broken-*")
+    assert moved.read_text(encoding="utf-8") == '{"not": "a list"'
+
+
+def test_request_log_keeps_only_recent_files(
+    monkeypatch, request_log, request_log_dir
+):
+    monkeypatch.setattr(log_handler, "BACKEND_REQUEST_LOG_BACKUP_COUNT", 2)
+    for day in (12, 13, 14):
+        write_request(
+            FakeResponse(201, "{}"), sent_at=datetime(2026, 11, day, tzinfo=SEOUL)
+        )
+
+    assert sorted(p.name for p in request_log_dir.iterdir()) == [
+        "backend_requests_2026-11-13.json",
+        "backend_requests_2026-11-14.json",
+    ]
 
 
 def test_request_log_records_error_without_response(request_log):
@@ -106,10 +138,10 @@ def test_request_log_records_error_without_response(request_log):
 
 
 def test_request_log_failure_does_not_raise(monkeypatch, request_log):
-    def broken_ensure(*args, **kwargs):
+    def broken_read(*args, **kwargs):
         raise OSError("disk full")
 
-    monkeypatch.setattr(log_handler, "_ensure_file_handler", broken_ensure)
+    monkeypatch.setattr(log_handler, "_read_record_list", broken_read)
 
     write_request(FakeResponse(201, "{}"))  # 예외가 밖으로 나오지 않아야 함
 
