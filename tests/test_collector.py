@@ -1,7 +1,8 @@
 import asyncio
+import json
 import logging
 import threading
-from datetime import date, datetime
+from datetime import datetime
 from types import SimpleNamespace
 from urllib.parse import parse_qs, urlencode, urlparse
 
@@ -15,27 +16,37 @@ from src import collector_job
 from src import backend_client
 
 
-def test_collect_and_post_sends_all_results_in_one_request(monkeypatch):
+def test_collect_and_post_sends_all_results_in_one_request(monkeypatch, tmp_path):
     # 부적합 활동은 수집 단계에서 InvalidContestError로 이미 제외됨
     uos_results = [{"title": "first"}, {"title": "second"}]
     contest_korea_results = [{"title": "third"}]
     sent = []
     started = []
     both_started = asyncio.Event()
+    uos_args = []
+    contest_korea_args = []
+    run_at = datetime(2026, 10, 28, 12, 0, tzinfo=settings.TIMEZONE)
+    state_path = tmp_path / "state.json"
+    state_path.write_text(
+        json.dumps({"contest_korea_last_str_no": {"contest": 202610280003}})
+    )
+    monkeypatch.setattr(settings, "COLLECTOR_STATE_PATH", str(state_path))
 
-    async def fake_collect_uos():
+    async def fake_collect_uos(start, end):
+        uos_args.append((start, end))
         started.append("uos")
         if len(started) == 2:
             both_started.set()
         await both_started.wait()
         return uos_results
 
-    async def fake_collect_contest_korea():
+    async def fake_collect_contest_korea(last_str_nos):
+        contest_korea_args.append(last_str_nos)
         started.append("contest_korea")
         if len(started) == 2:
             both_started.set()
         await both_started.wait()
-        return contest_korea_results
+        return contest_korea_results, {"contest": 202610280007, "activity": 1}
 
     def fake_post_competition(payload, x_ai_api_key):
         sent.append((payload, x_ai_api_key))
@@ -46,9 +57,86 @@ def test_collect_and_post_sends_all_results_in_one_request(monkeypatch):
     )
     monkeypatch.setattr(collector_job, "post_competition", fake_post_competition)
 
-    asyncio.run(asyncio.wait_for(collector_job.collect_and_post("test-key"), 3))
+    asyncio.run(
+        asyncio.wait_for(collector_job.collect_and_post("test-key", run_at), 3)
+    )
 
     assert sent == [(uos_results + contest_korea_results, "test-key")]
+    assert uos_args == [
+        (datetime(2026, 10, 28, 0, 0, tzinfo=settings.TIMEZONE), run_at)
+    ]
+    # 저장값이 없는 목록은 수집 구간 시작일 0번부터
+    assert contest_korea_args == [
+        {"contest": 202610280003, "activity": 202610280000}
+    ]
+    assert json.loads(state_path.read_text()) == {
+        "contest_korea_last_str_no": {"contest": 202610280007, "activity": 1}
+    }
+
+
+def test_collect_and_post_keeps_state_when_post_fails(monkeypatch, tmp_path):
+    run_at = datetime(2026, 10, 28, 0, 0, tzinfo=settings.TIMEZONE)
+    state_path = tmp_path / "state.json"
+    monkeypatch.setattr(settings, "COLLECTOR_STATE_PATH", str(state_path))
+
+    async def fake_collect_uos(start, end):
+        return []
+
+    async def fake_collect_contest_korea(last_str_nos):
+        return [{"title": "x"}], {"contest": 202610280009, "activity": 202610280009}
+
+    def fake_post_competition(payload, x_ai_api_key):
+        raise RuntimeError("backend down")
+
+    monkeypatch.setattr(collector_job, "collect_uos", fake_collect_uos)
+    monkeypatch.setattr(
+        collector_job, "collect_contest_korea", fake_collect_contest_korea
+    )
+    monkeypatch.setattr(collector_job, "post_competition", fake_post_competition)
+
+    with pytest.raises(RuntimeError):
+        asyncio.run(collector_job.collect_and_post("test-key", run_at))
+
+    assert not state_path.exists()
+
+
+def test_collect_and_post_skips_request_when_nothing_collected(monkeypatch, tmp_path):
+    run_at = datetime(2026, 10, 28, 0, 0, tzinfo=settings.TIMEZONE)
+    state_path = tmp_path / "state.json"
+    monkeypatch.setattr(settings, "COLLECTOR_STATE_PATH", str(state_path))
+    sent = []
+
+    async def fake_collect_uos(start, end):
+        return []
+
+    async def fake_collect_contest_korea(last_str_nos):
+        # 새 게시물은 있었지만 모두 필터링된 경우
+        return [], {"contest": 202610280009, "activity": 202610280000}
+
+    monkeypatch.setattr(collector_job, "collect_uos", fake_collect_uos)
+    monkeypatch.setattr(
+        collector_job, "collect_contest_korea", fake_collect_contest_korea
+    )
+    monkeypatch.setattr(
+        collector_job, "post_competition", lambda *args: sent.append(args)
+    )
+
+    asyncio.run(collector_job.collect_and_post("test-key", run_at))
+
+    assert sent == []
+    # 필터링된 게시물을 다음 회차에 다시 확인하지 않도록 번호는 갱신
+    assert json.loads(state_path.read_text()) == {
+        "contest_korea_last_str_no": {
+            "contest": 202610280009,
+            "activity": 202610280000,
+        }
+    }
+
+
+UOS_WINDOW = (
+    datetime(2026, 10, 28, 0, 0, tzinfo=settings.TIMEZONE),
+    datetime(2026, 10, 28, 12, 0, tzinfo=settings.TIMEZONE),
+)
 
 
 def test_collect_uos_fetches_feeds_and_extracts_pages_concurrently(monkeypatch):
@@ -56,23 +144,18 @@ def test_collect_uos_fetches_feeds_and_extracts_pages_concurrently(monkeypatch):
     extraction_started = []
     both_started = asyncio.Event()
 
-    class FakeDateTime(datetime):
-        @classmethod
-        def now(cls, tz=None):
-            return cls(2026, 10, 29, 12, 0, tzinfo=tz)
-
     def fake_parse_uos_rss(url):
         feed_barrier.wait(timeout=3)
         title = "general" if url == collector.UOS_RSS_GENERAL else "haksa"
         published_date = (
             "Wed, 28 Oct 2026 09:00:00 +0900"
             if title == "general"
-            else "Tue, 27 Oct 2026 16:30:00 +0000"
+            else "Tue, 27 Oct 2026 15:00:00 +0000"  # 10/28 00:00 KST (구간 시작 포함)
         )
         excluded_date = (
-            "Thu, 29 Oct 2026 09:00:00 +0900"
+            "Wed, 28 Oct 2026 12:00:00 +0900"  # 구간 끝 미포함
             if title == "general"
-            else "Tue, 27 Oct 2026 09:00:00 +0900"
+            else "Tue, 27 Oct 2026 23:59:59 +0900"
         )
         return [
             {
@@ -102,22 +185,16 @@ def test_collect_uos_fetches_feeds_and_extracts_pages_concurrently(monkeypatch):
         await both_started.wait()
         return {"title": page["title"], "is_eligible": True}
 
-    monkeypatch.setattr(collector, "datetime", FakeDateTime)
     monkeypatch.setattr(collector, "parse_uos_rss", fake_parse_uos_rss)
     monkeypatch.setattr(collector, "extract_uos_page", fake_extract_uos_page)
 
-    results = asyncio.run(asyncio.wait_for(collector.collect_uos(), 5))
+    results = asyncio.run(asyncio.wait_for(collector.collect_uos(*UOS_WINDOW), 5))
 
     assert [result["title"] for result in results] == ["general", "haksa"]
     assert extraction_started == ["general", "haksa"]
 
 
 def test_collect_uos_skips_pages_that_fail_extraction(monkeypatch):
-    class FakeDateTime(datetime):
-        @classmethod
-        def now(cls, tz=None):
-            return cls(2026, 10, 29, 12, 0, tzinfo=tz)
-
     def fake_parse_uos_rss(url):
         title = "general" if url == collector.UOS_RSS_GENERAL else "haksa"
         return [
@@ -135,11 +212,10 @@ def test_collect_uos_skips_pages_that_fail_extraction(monkeypatch):
             raise RuntimeError("extraction failed")
         return {"title": page["title"]}
 
-    monkeypatch.setattr(collector, "datetime", FakeDateTime)
     monkeypatch.setattr(collector, "parse_uos_rss", fake_parse_uos_rss)
     monkeypatch.setattr(collector, "extract_uos_page", fake_extract_uos_page)
 
-    results = asyncio.run(asyncio.wait_for(collector.collect_uos(), 5))
+    results = asyncio.run(asyncio.wait_for(collector.collect_uos(*UOS_WINDOW), 5))
 
     assert results == [{"title": "haksa"}]
 
@@ -147,11 +223,6 @@ def test_collect_uos_skips_pages_that_fail_extraction(monkeypatch):
 def test_collect_uos_logs_filtered_pages_as_info_without_traceback(
     monkeypatch, caplog
 ):
-    class FakeDateTime(datetime):
-        @classmethod
-        def now(cls, tz=None):
-            return cls(2026, 10, 29, 12, 0, tzinfo=tz)
-
     def fake_parse_uos_rss(url):
         title = "general" if url == collector.UOS_RSS_GENERAL else "haksa"
         return [
@@ -167,12 +238,11 @@ def test_collect_uos_logs_filtered_pages_as_info_without_traceback(
             raise InvalidContestError("팀으로 참가할 수 없는 활동입니다.")
         raise RuntimeError("unexpected")
 
-    monkeypatch.setattr(collector, "datetime", FakeDateTime)
     monkeypatch.setattr(collector, "parse_uos_rss", fake_parse_uos_rss)
     monkeypatch.setattr(collector, "extract_uos_page", fake_extract_uos_page)
 
     with caplog.at_level(logging.INFO, logger=collector.logger.name):
-        results = asyncio.run(asyncio.wait_for(collector.collect_uos(), 5))
+        results = asyncio.run(asyncio.wait_for(collector.collect_uos(*UOS_WINDOW), 5))
 
     assert results == []
     filtered = [r for r in caplog.records if "필터링됨" in r.getMessage()]
@@ -183,15 +253,10 @@ def test_collect_uos_logs_filtered_pages_as_info_without_traceback(
     assert failed[0].exc_info is not None
 
 
-def test_collect_contest_korea_filters_yesterday_across_pages(monkeypatch):
+def test_collect_contest_korea_filters_numbers_after_last_across_pages(monkeypatch):
     requested = []
     parsed = []
     list_url = collector.CONTEST_KOREA_CONTEST_LIST.split("?")[0]
-
-    class FakeDateTime(datetime):
-        @classmethod
-        def now(cls, tz=None):
-            return cls(2026, 10, 28, 0, 0, tzinfo=tz)
 
     class FakeResponse:
         def __init__(self, url, html):
@@ -240,22 +305,28 @@ def test_collect_contest_korea_filters_yesterday_across_pages(monkeypatch):
     async def fake_extract_page(page):
         return page
 
-    monkeypatch.setattr(collector, "datetime", FakeDateTime)
     monkeypatch.setattr(collector.requests, "get", fake_get)
     monkeypatch.setattr(collector, "parse_contest_korea", fake_parse)
     monkeypatch.setattr(collector, "extract_contest_korea_page", fake_extract_page)
 
-    results = asyncio.run(collector.collect_contest_korea())
+    results, last_str_nos = asyncio.run(
+        collector.collect_contest_korea(
+            {"contest": 202610270001, "activity": 202610270005}
+        )
+    )
 
     assert len(requested) == 3
     assert {params["int_gbn"] for url, params in requested if params} == {"1", "2"}
     assert all(url == list_url for url, params in requested if params)
+    # 마지막 번호와 같거나 작은 게시물은 제외
     assert [url.rsplit("=", 1)[-1] for url in parsed] == [
+        "202610280001",
         "202610270002",
         "202610270003",
-        "202610270005",
     ]
     assert [result["source_url"] for result in results] == parsed
+    # 새 게시물이 없는 목록은 기존 값 유지
+    assert last_str_nos == {"contest": 202610280001, "activity": 202610270005}
 
 
 @pytest.mark.parametrize("int_gbn", ["1", "2"])
@@ -293,7 +364,7 @@ def test_contest_korea_scans_only_first_30_entries(monkeypatch, int_gbn):
 
     monkeypatch.setattr(collector.requests, "get", fake_get)
     results = asyncio.run(
-        collector._contest_korea_detail_urls(list_url, date(2026, 11, 9))
+        collector._contest_korea_detail_urls(list_url, 202611090000)
     )
 
     assert requested_pages == [1, 2, 3]
@@ -303,8 +374,14 @@ def test_contest_korea_scans_only_first_30_entries(monkeypatch, int_gbn):
     ]
 
 
-def test_daily_collector_waits_until_seoul_midnight(monkeypatch):
-    current_time = datetime(2026, 10, 28, 23, 59, tzinfo=settings.TIMEZONE)
+@pytest.mark.parametrize(
+    ("hour", "minute", "expected_delay"),
+    [(23, 59, 60), (11, 59, 60), (0, 0, 12 * 3600), (12, 0, 12 * 3600)],
+)
+def test_daily_collector_waits_until_next_seoul_noon_or_midnight(
+    monkeypatch, hour, minute, expected_delay
+):
+    current_time = datetime(2026, 10, 28, hour, minute, tzinfo=settings.TIMEZONE)
     delays = []
 
     class FakeDateTime:
@@ -325,7 +402,7 @@ def test_daily_collector_waits_until_seoul_midnight(monkeypatch):
     with pytest.raises(asyncio.CancelledError):
         asyncio.run(collector_job.run_daily_collector("test-key"))
 
-    assert delays == [60]
+    assert delays == [expected_delay]
 
 
 def test_daily_collector_rejects_blank_api_key():

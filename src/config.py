@@ -9,16 +9,30 @@ load_dotenv(BASE_DIR / ".env")
 
 class Settings:
     OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-    OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-5-nano")
-    GPT_USAGE_LOG_DIR = os.getenv("GPT_USAGE_LOG_DIR", str(BASE_DIR / "tmp" / "logs"))
+    OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-6-luna")
+
+    TEXT_CACHE_KEY = os.getenv("TEXT_CACHE_KEY")
+    IMAGE_CACHE_KEY = os.getenv("IMAGE_CACHE_KEY")
+    UOS_TEXT_CACHE_KEY = os.getenv("UOS_TEXT_CACHE_KEY")
+    UOS_IMAGE_CACHE_KEY = os.getenv("UOS_IMAGE_CACHE_KEY")
+
+    GPT_USAGE_LOG_DIR = os.getenv(
+        "GPT_USAGE_LOG_DIR", str(BASE_DIR / "tmp" / "logs" / "gpt_usage")
+    )
     BACKEND_REQUEST_LOG_DIR = os.getenv(
-        "BACKEND_REQUEST_LOG_DIR", str(BASE_DIR / "tmp" / "logs")
+        "BACKEND_REQUEST_LOG_DIR", str(BASE_DIR / "tmp" / "logs" / "backend_requests")
     )
     API_REQUEST_LOG_DIR = os.getenv(
-        "API_REQUEST_LOG_DIR", str(BASE_DIR / "tmp" / "logs")
+        "API_REQUEST_LOG_DIR", str(BASE_DIR / "tmp" / "logs" / "api_requests")
     )
+
+    COLLECTOR_STATE_PATH = os.getenv(
+        "COLLECTOR_STATE_PATH", str(BASE_DIR / "tmp" / "collector_state.json")
+    )
+
     X_AI_API_KEY = os.getenv("X_AI_API_KEY")
     COMPETITIONS_API_URL = os.getenv("COMPETITIONS_API_URL")
+
     TIMEZONE = ZoneInfo("Asia/Seoul")
 
 

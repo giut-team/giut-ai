@@ -19,8 +19,9 @@ logger = logging.getLogger(__name__)
 
 _usage_logger = logging.getLogger(f"{__name__}.gpt_usage")
 _usage_logger_lock = Lock()
-_request_logger = logging.getLogger(f"{__name__}.backend_requests")
-_request_logger_lock = Lock()
+_request_log_lock = Lock()
+BACKEND_REQUEST_LOG_PREFIX = "backend_requests_"
+BACKEND_REQUEST_LOG_BACKUP_COUNT = 30
 _api_logger = logging.getLogger(f"{__name__}.api_requests")
 _api_logger_lock = Lock()
 
@@ -185,6 +186,35 @@ def _response_body_for_log(response: requests.Response | None) -> Any:
     return response.text
 
 
+def _read_record_list(path: Path) -> list:
+    """기존 날짜 파일의 리스트를 읽음. 형식이 깨졌으면 옆으로 옮겨 두고 새로 시작"""
+    try:
+        records = json.loads(path.read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        return []
+    except ValueError:
+        records = None
+    if isinstance(records, list):
+        return records
+
+    broken = path.with_name(
+        f"{path.name}.broken-{datetime.now(settings.TIMEZONE):%H%M%S}"
+    )
+    path.replace(broken)
+    logger.error("백엔드 요청 로그 형식 오류로 파일을 옮김: %s", broken)
+    return []
+
+
+def _remove_old_request_logs(log_dir: Path) -> None:
+    files = sorted(
+        log_dir.glob(
+            f"{BACKEND_REQUEST_LOG_PREFIX}[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9].json"
+        )
+    )
+    for old in files[:-BACKEND_REQUEST_LOG_BACKUP_COUNT]:
+        old.unlink()
+
+
 def write_backend_request_log(
     payload: list[dict],
     *,
@@ -193,11 +223,13 @@ def write_backend_request_log(
     response: requests.Response | None,
     error: Exception | None,
 ) -> None:
-    """백엔드로 보낸 요청 본문과 응답 결과를 들여쓰기한 JSON 객체로 이어서 기록
+    """백엔드로 보낸 요청 본문과 응답 결과를 날짜별 JSON 리스트 파일에 추가
 
-    한 줄 제약이 없어 사람이 읽기 쉬우며, 파일은 JSON 객체가 연속된 형태 (jq로 바로 읽힘)
+    `backend_requests_YYYY-MM-DD.json`(서울 기준 sent_at 날짜) 하나가 `[{...}, {...}]` 형태의
+    올바른 JSON 문서가 되도록 기존 리스트를 읽어 추가한 뒤 통째로 다시 씀
     """
     try:
+        sent_at = sent_at.astimezone(settings.TIMEZONE)
         record = {
             "sent_at": sent_at.isoformat(timespec="seconds"),
             "url": url,
@@ -207,15 +239,24 @@ def write_backend_request_log(
             "error": repr(error) if error is not None else None,
             "payload": payload,
         }
-        message = json.dumps(record, ensure_ascii=False, indent=2)
+        # 직렬화가 실패하면 기존 파일을 건드리지 않도록 먼저 검증
+        json.dumps(record, ensure_ascii=False)
 
-        _ensure_file_handler(
-            _request_logger,
-            _request_logger_lock,
-            settings.BACKEND_REQUEST_LOG_DIR,
-            "backend_requests.json",
-        )
-        _request_logger.info(message)
+        log_dir = Path(settings.BACKEND_REQUEST_LOG_DIR).expanduser()
+        if not log_dir.is_absolute():
+            log_dir = BASE_DIR / log_dir
+        path = log_dir / f"{BACKEND_REQUEST_LOG_PREFIX}{sent_at.date().isoformat()}.json"
+
+        with _request_log_lock:
+            log_dir.mkdir(parents=True, exist_ok=True)
+            records = _read_record_list(path)
+            records.append(record)
+            tmp_path = path.with_name(path.name + ".tmp")
+            tmp_path.write_text(
+                json.dumps(records, ensure_ascii=False, indent=2), encoding="utf-8"
+            )
+            tmp_path.replace(path)  # 쓰는 도중 중단돼도 기존 파일이 깨지지 않도록 교체
+            _remove_old_request_logs(log_dir)
     except Exception:
         # 기록 실패가 전송 결과에 영향을 주지 않도록 로그만 남김
         logger.exception("백엔드 요청 기록 실패")
@@ -261,7 +302,7 @@ def write_api_request_log(
             "method": method,
             "path": path,
             "status_code": status_code,
-            "error": repr(error) if error is not None else None,
+            "unhandled_exception": repr(error) if error is not None else None,
             "request_body": _body_for_log(request_body),
             "response_body": _body_for_log(response_body),
         }

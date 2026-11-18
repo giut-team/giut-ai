@@ -4,7 +4,6 @@ import pytest
 
 from src.parsers.uos_html_parser import _parse_uos_html, parse_uos_html
 
-
 HTML = """
 <html>
   <header><h3>사이트 메뉴</h3><img src="/logo.png"></header>
@@ -27,7 +26,7 @@ def test_parse_uos_html_extracts_only_notice_content():
 
     assert _parse_uos_html(HTML, url) == {
         "title": "[생활관] 수강생 모집",
-        "link": url,
+        "source_url": url,
         "body": "2026년 수강생 모집\n신청 안내\n마감일 확인",
         "images": [
             "https://www.uos.ac.kr/upload/poster.jpg",
@@ -48,7 +47,7 @@ def test_parse_uos_html_adds_anonymous_access_without_changing_link(monkeypatch)
 
     result = parse_uos_html(url)
 
-    assert result["link"] == url
+    assert result["source_url"] == url
     assert requested[0][0] == url + "&identified=anonymous"
 
 
