@@ -9,12 +9,12 @@ load_dotenv(BASE_DIR / ".env")
 
 class Settings:
     OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-    OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-5-nano")
+    OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-6-luna")
 
-    TEXT_CACHE_KEY = "giut-ai-text-extraction"
-    IMAGE_CACHE_KEY = "giut-ai-image-extraction"
-    UOS_TEXT_CACHE_KEY = "giut-ai-uos-text-extraction"
-    UOS_IMAGE_CACHE_KEY = "giut-ai-uos-image-extraction"
+    TEXT_CACHE_KEY = os.getenv("TEXT_CACHE_KEY")
+    IMAGE_CACHE_KEY = os.getenv("IMAGE_CACHE_KEY")
+    UOS_TEXT_CACHE_KEY = os.getenv("UOS_TEXT_CACHE_KEY")
+    UOS_IMAGE_CACHE_KEY = os.getenv("UOS_IMAGE_CACHE_KEY")
 
     GPT_USAGE_LOG_DIR = os.getenv(
         "GPT_USAGE_LOG_DIR", str(BASE_DIR / "tmp" / "logs" / "gpt_usage")
