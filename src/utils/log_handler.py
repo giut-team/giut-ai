@@ -302,7 +302,7 @@ def write_api_request_log(
             "method": method,
             "path": path,
             "status_code": status_code,
-            "error": repr(error) if error is not None else None,
+            "unhandled_exception": repr(error) if error is not None else None,
             "request_body": _body_for_log(request_body),
             "response_body": _body_for_log(response_body),
         }

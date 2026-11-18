@@ -189,7 +189,7 @@ def test_api_log_records_request_and_response_in_seoul_time(api_log):
         "method": "POST",
         "path": "/api/competitions/extract",
         "status_code": 200,
-        "error": None,
+        "unhandled_exception": None,
         "request_body": {"url": "https://www.uos.ac.kr/notice"},
         "response_body": {"title": "공모전"},
     }
@@ -212,13 +212,13 @@ def test_api_log_converts_models_bytes_and_non_json_values(api_log):
     assert bytes_record["response_body"] == "plain"
 
 
-def test_api_log_records_error(api_log):
+def test_api_log_records_unhandled_exception(api_log):
     write_api(status_code=500, response_body=None, error=RuntimeError("boom"))
 
     [record] = api_log()
     assert record["status_code"] == 500
     assert record["response_body"] is None
-    assert record["error"] == "RuntimeError('boom')"
+    assert record["unhandled_exception"] == "RuntimeError('boom')"
 
 
 def test_api_log_failure_does_not_raise(monkeypatch, api_log):
