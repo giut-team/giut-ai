@@ -135,7 +135,7 @@ async def extract_fields_from_images(
 
     try:
         return await _request_image_fields(
-            prompt, data_urls, source_url, response_format
+            prompt, data_urls, source_url, response_format, prompt_cache_key
         )
     except Exception as exc:
         logger.exception(exc)
