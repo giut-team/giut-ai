@@ -153,13 +153,13 @@ def _target_participants(target_text: str) -> TargetParticipantsEnum:
 
 
 def _activity_kind(title: str, collect_source: str) -> ActivityKindEnum:
-    if collect_source == "contest":
-        if title.find("대회") != -1:
-            return ActivityKindEnum.COMPETITION
-        else:
-            return ActivityKindEnum.CONTEST
+    # if collect_source == "contest":
+    #     if title.find("대회") != -1:
+    #         return ActivityKindEnum.COMPETITION
+    #     else:
+    #         return ActivityKindEnum.CONTEST
 
-    elif collect_source == "activity":
+    # elif collect_source == "activity":
         for activity_kind in ActivityKindEnum:
             if title.find(activity_kind.value) != -1:
                 return activity_kind
